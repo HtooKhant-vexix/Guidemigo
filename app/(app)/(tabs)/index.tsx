@@ -226,7 +226,7 @@ export default function Home() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Trending in Singapore</Text>
-          <TouchableOpacity onPress={() => router.push('/hosts/all')}>
+          <TouchableOpacity onPress={() => router.push('/trend/all')}>
             <Text style={styles.viewAllButton}>View All</Text>
           </TouchableOpacity>
         </View>

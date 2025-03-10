@@ -61,6 +61,57 @@ const PLACES = {
       'Cool House',
     ],
   },
+  '4': {
+    id: '4',
+    name: 'Gardens by the Bay',
+    location: 'Singapore',
+    image: require('../../../assets/images/bay.jpg'),
+    rating: 4.8,
+    duration: '2-3 hours',
+    groupSize: '1-10 people',
+    description:
+      "Singapore Botanic Gardens is a 162-year-old tropical garden located at the fringe of Singapore's Orchard Road shopping district. It is one of three gardens, and the only tropical garden, to be honored as a UNESCO World Heritage Site.",
+    highlights: [
+      'National Orchid Garden',
+      'Swan Lake',
+      'Rainforest Walking Trail',
+      'Evolution Garden',
+    ],
+  },
+  '5': {
+    id: '5',
+    name: 'Marina Bay Sands',
+    location: 'Marina Bay',
+    image: require('../../../assets/images/marina.jpg'),
+    rating: 4.9,
+    duration: '1-2 hours',
+    groupSize: '1-15 people',
+    description:
+      'Cloud Forest is a mysterious world veiled in mist. Take in breathtaking mountain views surrounded by diverse vegetation and hidden floral gems. And learn about rare plants and their fast-disappearing environment.',
+    highlights: [
+      'The Lost World',
+      'Crystal Mountain',
+      'Tree Top Walk',
+      'Secret Garden',
+    ],
+  },
+  '6': {
+    id: '6',
+    name: 'Sentosa Island',
+    location: 'Singapore',
+    image: require('../../../assets/images/sentosa.jpg'),
+    rating: 4.7,
+    duration: '1-2 hours',
+    groupSize: '1-8 people',
+    description:
+      'The National Orchid Garden is located on the highest hill in the Singapore Botanic Gardens. Three hectares of carefully landscaped slopes provide a setting for over 1,000 species and 2,000 hybrids.',
+    highlights: [
+      'VIP Orchid Garden',
+      'Burkill Hall',
+      'Misthouse',
+      'Cool House',
+    ],
+  },
 };
 
 export default function PlaceDetail() {

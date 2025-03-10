@@ -92,6 +92,7 @@ export default function AllHosts() {
             </View>
           </TouchableOpacity>
         )}
+        removeClippedSubviews={false}
         contentContainerStyle={styles.listContent}
       />
     </View>

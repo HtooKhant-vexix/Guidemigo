@@ -89,6 +89,7 @@ export default function AllPlaces() {
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.listContent}
+        removeClippedSubviews={false}
       />
     </View>
   );

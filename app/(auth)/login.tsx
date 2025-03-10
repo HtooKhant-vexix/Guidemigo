@@ -1,10 +1,26 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
+import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  //demo@example.com
+  //password123
+  const { login } = useAuth();
+
   const handleLogin = () => {
-    router.replace('/(app)/(tabs)');
+    const success = login(email, password);
+    if (success) {
+      router.replace('/(app)/(tabs)');
+    } else {
+      Alert.alert(
+        'Login Failed',
+        'Invalid email or password.'
+      );
+    }
   };
 
   return (
@@ -25,6 +41,8 @@ export default function Login() {
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
@@ -34,6 +52,8 @@ export default function Login() {
               style={styles.input}
               placeholder="Enter your password"
               secureTextEntry
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
 
@@ -46,6 +66,12 @@ export default function Login() {
             <Link href="/register" style={styles.footerLink}>Register</Link>
           </View>
         </View>
+
+        {/* <View style={styles.defaultCredentials}>
+          <Text style={styles.defaultCredentialsTitle}>Default Credentials</Text>
+          <Text style={styles.defaultCredentialsText}>Email: demo@example.com</Text>
+          <Text style={styles.defaultCredentialsText}>Password: password123</Text>
+        </View> */}
       </View>
     </View>
   );
@@ -120,5 +146,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'InterSemiBold',
     color: '#00BCD4',
+  },
+  defaultCredentials: {
+    marginTop: 48,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+  },
+  defaultCredentialsTitle: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  defaultCredentialsText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
   },
 });

@@ -13,7 +13,9 @@
       "imageWidth": 1500,
       "resizeMode": "cover"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -43,6 +45,14 @@
     },
     "android": {
       "package": "com.htoo_khant002.guidemigo"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "128a6c00-f5c1-49a4-915e-4e79cb1e4cef"
+      }
     }
   }
 }
