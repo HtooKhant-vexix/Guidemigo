@@ -320,7 +320,6 @@ export default function AccountSetup() {
               <Text style={{ color: 'red' }}>{errors?.gender[0]}</Text>
             )}
           </View>
-
           <View style={styles.profileTypeContainer}>
             <Text style={styles.sectionTitle}>Profile Type</Text>
             <View style={styles.profileOptions}>
