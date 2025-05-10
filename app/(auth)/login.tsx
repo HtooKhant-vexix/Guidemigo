@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { Link, router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useState } from 'react';
@@ -7,19 +14,14 @@ import { useAuth } from '../../hooks/useAuth';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  //demo@example.com
-  //password123
-  const { login } = useAuth();
+  const { login, isLoading, error, clearError } = useAuth();
 
-  const handleLogin = () => {
-    const success = login(email, password);
-    if (success) {
+  const handleLogin = async () => {
+    try {
+      await login({ email, password });
       router.replace('/(app)/(tabs)');
-    } else {
-      Alert.alert(
-        'Login Failed',
-        'Invalid email or password.'
-      );
+    } catch (error) {
+      // Error is handled by the auth store
     }
   };
 
@@ -28,10 +30,19 @@ export default function Login() {
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <ArrowLeft color="#000" size={24} />
       </TouchableOpacity>
-      
+
       <View style={styles.content}>
         <Text style={styles.title}>Welcome Back!</Text>
         <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={clearError}>
+              <Text style={styles.errorDismiss}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
@@ -57,21 +68,28 @@ export default function Login() {
             />
           </View>
 
-          <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Login</Text>
+          <TouchableOpacity
+            onPress={handleLogin}
+            style={[
+              styles.loginButton,
+              isLoading && styles.loginButtonDisabled,
+            ]}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>Login</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
-            <Link href="/register" style={styles.footerLink}>Register</Link>
+            <Link href="/register" style={styles.footerLink}>
+              Register
+            </Link>
           </View>
         </View>
-
-        {/* <View style={styles.defaultCredentials}>
-          <Text style={styles.defaultCredentialsTitle}>Default Credentials</Text>
-          <Text style={styles.defaultCredentialsText}>Email: demo@example.com</Text>
-          <Text style={styles.defaultCredentialsText}>Password: password123</Text>
-        </View> */}
       </View>
     </View>
   );
@@ -84,6 +102,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 16,
+    paddingTop: 48,
   },
   content: {
     flex: 1,
@@ -100,6 +119,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     color: '#666',
     marginBottom: 48,
+  },
+  errorContainer: {
+    backgroundColor: '#FFE5E5',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FF4444',
+    fontFamily: 'Inter',
+    flex: 1,
+  },
+  errorDismiss: {
+    color: '#FF4444',
+    fontFamily: 'InterSemiBold',
+    marginLeft: 16,
   },
   form: {
     gap: 24,
@@ -127,6 +165,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     fontSize: 16,
     fontFamily: 'InterSemiBold',
@@ -146,22 +187,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'InterSemiBold',
     color: '#00BCD4',
-  },
-  defaultCredentials: {
-    marginTop: 48,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-  },
-  defaultCredentialsTitle: {
-    fontSize: 16,
-    fontFamily: 'InterSemiBold',
-    color: '#000',
-    marginBottom: 8,
-  },
-  defaultCredentialsText: {
-    fontSize: 14,
-    fontFamily: 'Inter',
-    color: '#666',
   },
 });

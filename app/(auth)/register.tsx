@@ -1,11 +1,21 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { Link, router } from 'expo-router';
 import { ArrowLeft, Calendar, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
-  const [profileType, setProfileType] = useState<'personal' | 'business'>('personal');
+  const [profileType, setProfileType] = useState<'personal' | 'business'>(
+    'personal'
+  );
+
   const [interests, setInterests] = useState({
     findingHosts: true,
     offeringHosting: false,
@@ -20,22 +30,22 @@ export default function Register() {
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <ArrowLeft color="#000" size={24} />
       </TouchableOpacity>
-      
+
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to Guidemigo</Text>
 
         <View style={styles.form}>
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Full Name</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your full name"
               autoCapitalize="words"
             />
-          </View>
+          </View> */}
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email ID</Text>
+            <Text style={styles.label}>Email </Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
@@ -44,7 +54,7 @@ export default function Register() {
             />
           </View>
 
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
             <View style={styles.phoneInput}>
               <View style={styles.countryCode}>
@@ -57,9 +67,9 @@ export default function Register() {
                 keyboardType="phone-pad"
               />
             </View>
-          </View>
+          </View> */}
 
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>DOB</Text>
             <TouchableOpacity style={styles.input}>
               <View style={styles.dateInput}>
@@ -67,14 +77,14 @@ export default function Register() {
                 <Calendar size={20} color="#666" />
               </View>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Gender</Text>
             <TouchableOpacity style={styles.input}>
               <Text style={styles.selectText}>Select gender</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Create Password</Text>
@@ -96,80 +106,128 @@ export default function Register() {
               </TouchableOpacity>
             </View>
           </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Comfirm Password</Text>
+            <View style={styles.passwordInput}>
+              <TextInput
+                style={styles.passwordField}
+                placeholder="Create a password"
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color="#666" />
+                ) : (
+                  <Eye size={20} color="#666" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
 
-          <View style={styles.profileTypeContainer}>
+          {/* <View style={styles.profileTypeContainer}>
             <Text style={styles.sectionTitle}>Profile Type</Text>
             <View style={styles.profileOptions}>
               <TouchableOpacity
                 style={[
                   styles.profileOption,
-                  profileType === 'personal' && styles.profileOptionSelected
+                  profileType === 'personal' && styles.profileOptionSelected,
                 ]}
                 onPress={() => setProfileType('personal')}
               >
-                <Text style={[
-                  styles.profileOptionText,
-                  profileType === 'personal' && styles.profileOptionTextSelected
-                ]}>Personal</Text>
+                <Text
+                  style={[
+                    styles.profileOptionText,
+                    profileType === 'personal' &&
+                      styles.profileOptionTextSelected,
+                  ]}
+                >
+                  Host
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.profileOption,
-                  profileType === 'business' && styles.profileOptionSelected
+                  profileType === 'business' && styles.profileOptionSelected,
                 ]}
                 onPress={() => setProfileType('business')}
               >
-                <Text style={[
-                  styles.profileOptionText,
-                  profileType === 'business' && styles.profileOptionTextSelected
-                ]}>Business</Text>
+                <Text
+                  style={[
+                    styles.profileOptionText,
+                    profileType === 'business' &&
+                      styles.profileOptionTextSelected,
+                  ]}
+                >
+                  Traveller
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
 
-          <View style={styles.interestsContainer}>
+          {/* <View style={styles.interestsContainer}>
             <Text style={styles.sectionTitle}>Interested In</Text>
             <View style={styles.interestOptions}>
               <TouchableOpacity
                 style={[
                   styles.interestOption,
-                  interests.findingHosts && styles.interestOptionSelected
+                  interests.findingHosts && styles.interestOptionSelected,
                 ]}
-                onPress={() => setInterests(prev => ({
-                  ...prev,
-                  findingHosts: !prev.findingHosts
-                }))}
+                onPress={() =>
+                  setInterests((prev) => ({
+                    ...prev,
+                    findingHosts: !prev.findingHosts,
+                  }))
+                }
               >
-                <Text style={[
-                  styles.interestOptionText,
-                  interests.findingHosts && styles.interestOptionTextSelected
-                ]}>Finding Hosts/Locations</Text>
+                <Text
+                  style={[
+                    styles.interestOptionText,
+                    interests.findingHosts && styles.interestOptionTextSelected,
+                  ]}
+                >
+                  Finding Hosts/Locations
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.interestOption,
-                  interests.offeringHosting && styles.interestOptionSelected
+                  interests.offeringHosting && styles.interestOptionSelected,
                 ]}
-                onPress={() => setInterests(prev => ({
-                  ...prev,
-                  offeringHosting: !prev.offeringHosting
-                }))}
+                onPress={() =>
+                  setInterests((prev) => ({
+                    ...prev,
+                    offeringHosting: !prev.offeringHosting,
+                  }))
+                }
               >
-                <Text style={[
-                  styles.interestOptionText,
-                  interests.offeringHosting && styles.interestOptionTextSelected
-                ]}>Offering Hostings</Text>
+                <Text
+                  style={[
+                    styles.interestOptionText,
+                    interests.offeringHosting &&
+                      styles.interestOptionTextSelected,
+                  ]}
+                >
+                  Offering Hostings
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
 
-          <TouchableOpacity onPress={handleRegister} style={styles.submitButton}>
+          <TouchableOpacity
+            onPress={handleRegister}
+            style={styles.submitButton}
+          >
             <Text style={styles.submitButtonText}>Submit</Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already a Member </Text>
-            <Link href="/login" style={styles.footerLink}>Please Login!</Link>
+            <Link href="/login" style={styles.footerLink}>
+              Please Login!
+            </Link>
           </View>
         </View>
       </View>
