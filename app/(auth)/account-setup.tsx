@@ -17,7 +17,7 @@ import {
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { z } from 'zod';
-// import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import Swal from 'sweetalert2';
 // import * as ImagePicker from 'expo-image-picker';
 
@@ -300,13 +300,13 @@ export default function AccountSetup() {
                 <Calendar size={20} color="#666" />
               </View>
             </TouchableOpacity>
-            {/* <DateTimePickerModal
+            <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
               onConfirm={handleDateConfirm}
               onCancel={() => setDatePickerVisible(false)}
               maximumDate={new Date()}
-            /> */}
+            />
           </View>
 
           <View style={styles.inputContainer}>
