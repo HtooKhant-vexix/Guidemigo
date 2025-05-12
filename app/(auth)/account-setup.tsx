@@ -22,14 +22,21 @@ import Swal from 'sweetalert2';
 // import * as ImagePicker from 'expo-image-picker';
 
 export default function AccountSetup() {
-  const [profileType, setProfileType] = useState<'personal' | 'business'>(
-    'personal'
+  const [profileType, setProfileType] = useState<'host' | 'traveller'>(
+    'traveller'
   );
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showLanguages, setShowLanguages] = useState(false);
+  const [showExpertise, setShowExpertise] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [selectedGender, setSelectedGender] = useState<string | null>(null);
 
   const profileSchema = z.object({
-    fullName: z.string().min(1, 'Full name is required'),
-    username: z.string().min(3, 'Username must be at least 3 characters'),
-    phoneNumber: z
+    name: z.string().min(1, 'Full name is required'),
+    phonenumber: z
       .string()
       .regex(/^[0-9]{8}$/, 'Phone number must be 8 digits'),
     dob: z.string().min(1, 'Date of birth is required'),
@@ -39,25 +46,35 @@ export default function AccountSetup() {
     languages: z.string().min(1, 'Languages are required'),
   });
 
-  const [formValues, setFormValues] = useState({
-    fullName: '',
-    username: '',
-    phoneNumber: '',
+  const [formValues, setFormValues] = useState<{
+    name: string;
+    phonenumber: string;
+    dob: string;
+    gender: string;
+    type: 'host' | 'traveller';
+    bio: string;
+    location: string;
+    languages: string[];
+    experience?: string;
+    travellers?: number;
+    expertise?: string[];
+  }>({
+    name: '',
+    phonenumber: '',
     dob: '',
+    type: 'traveller',
     gender: '',
     bio: '',
     location: '',
-    languages: '',
+    languages: selectedLanguages,
+    experience: '',
+    travellers: 0,
+    expertise: [],
   });
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof typeof formValues, string[]>>
   >({});
-
-  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showLanguages, setShowLanguages] = useState(false);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
   const LANGUAGES = [
     'English',
@@ -70,6 +87,29 @@ export default function AccountSetup() {
     'French',
     'Spanish',
     'German',
+  ];
+
+  const EXPERTISE = [
+    'Local Culture',
+    'Food & Cuisine',
+    'History & Heritage',
+    'Nature & Wildlife',
+    'Adventure Sports',
+    'Photography',
+    'Nightlife',
+    'Architecture',
+    'Shopping',
+    'Religious Sites',
+    'Art & Crafts',
+    'Music & Dance',
+    'Traditional Festivals',
+    'Hiking & Trekking',
+    'Cycling Tours',
+    'City Tours',
+    'Boat Tours',
+    'Language Translation',
+    'Transportation Arrangements',
+    'Event Planning',
   ];
 
   const COUNTRY_CODES = [
@@ -85,11 +125,19 @@ export default function AccountSetup() {
     { code: '+86', country: 'China', flag: '🇨🇳' },
   ];
 
+  const GENDER_OPTIONS = [
+    { label: 'Male', value: 'male' },
+    { label: 'Female', value: 'female' },
+    { label: 'Non-binary', value: 'non-binary' },
+    { label: 'Prefer not to say', value: 'not-specified' },
+  ];
+
   const [showCountryCodes, setShowCountryCodes] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
 
   const handleDateConfirm = (date: Date) => {
     setSelectedDate(date);
+    setFormValues({ ...formValues, dob: date?.toISOString() });
     setDatePickerVisible(false);
   };
 
@@ -101,7 +149,30 @@ export default function AccountSetup() {
         ? prev.filter((l) => l !== language)
         : [...prev, language]
     );
+    setFormValues({
+      ...formValues,
+      languages: selectedLanguages.includes(language)
+        ? selectedLanguages.filter((l) => l !== language)
+        : [...selectedLanguages, language],
+    });
   };
+  const toggleExpertise = (expert: string) => {
+    setSelectedExpertise((prev) =>
+      prev.includes(expert)
+        ? prev.filter((l) => l !== expert)
+        : [...prev, expert]
+    );
+    setFormValues({
+      ...formValues,
+      languages: selectedLanguages.includes(expert)
+        ? selectedLanguages.filter((l) => l !== expert)
+        : [...selectedLanguages, expert],
+    });
+  };
+
+  console.log('Selected Languages:', selectedLanguages);
+  console.log('Selected Country:', selectedCountry);
+  console.log('Selected date:', selectedDate?.toString());
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -110,6 +181,13 @@ export default function AccountSetup() {
       day: 'numeric',
     });
   };
+  // const formatDate = (date: Date) => {
+  //   return date.toLocaleDateString('en-US', {
+  //     year: 'numeric',
+  //     month: 'long',
+  //     day: 'numeric',
+  //   });
+  // };
 
   const handleSubmit = () => {
     const result = profileSchema.safeParse(formValues);
@@ -185,20 +263,20 @@ export default function AccountSetup() {
             <Text style={styles.label}>Full Name </Text>
 
             <TextInput
-              style={errors?.fullName ? styles.input_err : styles.input}
+              style={errors?.name ? styles.input_err : styles.input}
               placeholder="Enter your full name"
               autoCapitalize="words"
-              value={formValues.fullName}
+              value={formValues.name}
               onChangeText={(text) =>
-                setFormValues({ ...formValues, fullName: text })
+                setFormValues({ ...formValues, name: text })
               }
             />
-            {errors?.fullName && (
-              <Text style={{ color: 'red' }}>{errors?.fullName[0]}</Text>
+            {errors?.name && (
+              <Text style={{ color: 'red' }}>{errors?.name[0]}</Text>
             )}
           </View>
 
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Username</Text>
             <TextInput
               style={errors?.username ? styles.input_err : styles.input}
@@ -212,7 +290,7 @@ export default function AccountSetup() {
             {errors?.username && (
               <Text style={{ color: 'red' }}>{errors?.username[0]}</Text>
             )}
-          </View>
+          </View> */}
 
           {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
@@ -222,7 +300,7 @@ export default function AccountSetup() {
                 <Text style={styles.countryText}>+65</Text>
               </View>
               <TextInput
-                style={styles.phoneNumber}
+                style={styles.phonenumber}
                 placeholder="Enter phone number"
                 keyboardType="phone-pad"
               />
@@ -231,7 +309,11 @@ export default function AccountSetup() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
-            <View style={styles.phoneInput}>
+            <View
+              style={
+                errors.phonenumber ? styles.phoneInput_err : styles.phoneInput
+              }
+            >
               <TouchableOpacity
                 style={styles.countryCode}
                 onPress={() => setShowCountryCodes(!showCountryCodes)}
@@ -241,11 +323,18 @@ export default function AccountSetup() {
                 <ChevronDown size={16} color="#666" />
               </TouchableOpacity>
               <TextInput
-                style={styles.phoneNumber}
+                style={styles.phonenumber}
                 placeholder="Enter phone number"
                 keyboardType="phone-pad"
+                value={formValues.phonenumber}
+                onChangeText={(text) =>
+                  setFormValues({ ...formValues, phonenumber: text })
+                }
               />
             </View>
+            {errors?.phonenumber && (
+              <Text style={{ color: 'red' }}>{errors?.phonenumber[0]}</Text>
+            )}
             {showCountryCodes && (
               <ScrollView
                 nestedScrollEnabled={true}
@@ -288,7 +377,7 @@ export default function AccountSetup() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Date of Birth</Text>
             <TouchableOpacity
-              style={styles.input}
+              style={errors.dob ? styles.input_err : styles.input}
               onPress={() => setDatePickerVisible(true)}
             >
               <View style={styles.dateInput}>
@@ -307,17 +396,47 @@ export default function AccountSetup() {
               onCancel={() => setDatePickerVisible(false)}
               maximumDate={new Date()}
             />
+            {errors?.dob && (
+              <Text style={{ color: 'red' }}>{errors?.dob[0]}</Text>
+            )}
           </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Gender</Text>
             <TouchableOpacity
               style={errors?.gender ? styles.input_err : styles.input}
+              onPress={() => setShowGenderModal(!showGenderModal)}
             >
-              <Text style={styles.selectText}>Select gender</Text>
+              <Text style={styles.selectText}>
+                {selectedGender ? selectedGender : 'Select gender'}
+              </Text>
             </TouchableOpacity>
             {errors?.gender && (
               <Text style={{ color: 'red' }}>{errors?.gender[0]}</Text>
+            )}
+            {showGenderModal && (
+              <ScrollView
+                nestedScrollEnabled={true}
+                style={styles.countryCodeDropdown}
+              >
+                {GENDER_OPTIONS.map((country) => (
+                  <TouchableOpacity
+                    key={country.value}
+                    style={styles.countryOption}
+                    onPress={() => {
+                      setShowGenderModal(false),
+                        setFormValues({ ...formValues, gender: country.value });
+                      setSelectedGender(country.label);
+                    }}
+                  >
+                    {/* <Text style={styles.countryFlag}>{country.flag}</Text> */}
+                    <Text style={styles.countryOptionText}>
+                      {country.label}
+                    </Text>
+                    {/* <Text style={styles.countryOptionCode}>{country.code}</Text> */}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             )}
           </View>
           <View style={styles.profileTypeContainer}>
@@ -326,15 +445,14 @@ export default function AccountSetup() {
               <TouchableOpacity
                 style={[
                   styles.profileOption,
-                  profileType === 'personal' && styles.profileOptionSelected,
+                  profileType === 'host' && styles.profileOptionSelected,
                 ]}
-                onPress={() => setProfileType('personal')}
+                onPress={() => setProfileType('host')}
               >
                 <Text
                   style={[
                     styles.profileOptionText,
-                    profileType === 'personal' &&
-                      styles.profileOptionTextSelected,
+                    profileType === 'host' && styles.profileOptionTextSelected,
                   ]}
                 >
                   Host
@@ -343,14 +461,14 @@ export default function AccountSetup() {
               <TouchableOpacity
                 style={[
                   styles.profileOption,
-                  profileType === 'business' && styles.profileOptionSelected,
+                  profileType === 'traveller' && styles.profileOptionSelected,
                 ]}
-                onPress={() => setProfileType('business')}
+                onPress={() => setProfileType('traveller')}
               >
                 <Text
                   style={[
                     styles.profileOptionText,
-                    profileType === 'business' &&
+                    profileType === 'traveller' &&
                       styles.profileOptionTextSelected,
                   ]}
                 >
@@ -367,15 +485,24 @@ export default function AccountSetup() {
               placeholder="Tell us about yourself"
               multiline
               numberOfLines={4}
+              onChangeText={(text) =>
+                setFormValues({ ...formValues, bio: text })
+              }
             />
           </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Location</Text>
             <TextInput
-              style={styles.input}
+              style={errors?.location ? styles.input_err : styles.input}
               placeholder="Where are you based?"
+              onChangeText={(text) =>
+                setFormValues({ ...formValues, location: text })
+              }
             />
+            {errors?.location && (
+              <Text style={{ color: 'red' }}>{errors?.location[0]}</Text>
+            )}
           </View>
 
           {/* <View style={styles.inputContainer}>
@@ -388,7 +515,7 @@ export default function AccountSetup() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Languages</Text>
             <TouchableOpacity
-              style={styles.input}
+              style={errors?.languages ? styles.input_err : styles.input}
               onPress={() => setShowLanguages(!showLanguages)}
             >
               <View style={styles.languageSelector}>
@@ -405,6 +532,9 @@ export default function AccountSetup() {
                 <ChevronDown size={20} color="#666" />
               </View>
             </TouchableOpacity>
+            {errors?.languages && (
+              <Text style={{ color: 'red' }}>{errors?.languages[0]}</Text>
+            )}
             {showLanguages && (
               <ScrollView
                 style={styles.languageDropdown}
@@ -429,6 +559,59 @@ export default function AccountSetup() {
                       ]}
                     >
                       {language}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Expertise</Text>
+            <TouchableOpacity
+              style={errors?.expertise ? styles.input_err : styles.input}
+              onPress={() => setShowExpertise(!showExpertise)}
+            >
+              <View style={styles.languageSelector}>
+                <Text
+                  style={[
+                    styles.languageText,
+                    selectedExpertise.length > 0 && styles.selectedText,
+                  ]}
+                >
+                  {selectedExpertise.length > 0
+                    ? selectedExpertise.join(', ')
+                    : 'Select languages'}
+                </Text>
+                <ChevronDown size={20} color="#666" />
+              </View>
+            </TouchableOpacity>
+            {errors?.expertise && (
+              <Text style={{ color: 'red' }}>{errors?.expertise[0]}</Text>
+            )}
+            {showExpertise && (
+              <ScrollView
+                style={styles.languageDropdown}
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+              >
+                {EXPERTISE.map((expert) => (
+                  <TouchableOpacity
+                    key={expert}
+                    style={[
+                      styles.languageOption,
+                      selectedExpertise.includes(expert) &&
+                        styles.selectedLanguageOption,
+                    ]}
+                    onPress={() => toggleExpertise(expert)}
+                  >
+                    <Text
+                      style={[
+                        styles.languageOptionText,
+                        selectedExpertise.includes(expert) &&
+                          styles.selectedLanguageOptionText,
+                      ]}
+                    >
+                      {expert}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -615,7 +798,14 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 12,
   },
-  phoneNumber: {
+  phoneInput_err: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'red',
+    borderRadius: 12,
+  },
+  phonenumber: {
     flex: 1,
     padding: 16,
     fontSize: 16,

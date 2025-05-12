@@ -6,6 +6,8 @@ import {
   Plane,
   Menu,
   House,
+  Heart,
+  MapPin,
 } from 'lucide-react-native';
 
 export default function TabLayout() {
@@ -49,7 +51,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="hotelmigo"
         options={{
           title: 'Hotelmigo',
@@ -65,6 +67,20 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Plane size={size + 10} color={color} /> // Increase size of the icon
           ),
+        }}
+      /> */}
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="places"
+        options={{
+          title: 'Places',
+          tabBarIcon: ({ color, size }) => <MapPin size={size} color={color} />,
         }}
       />
       <Tabs.Screen

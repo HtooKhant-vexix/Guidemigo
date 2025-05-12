@@ -9,6 +9,8 @@ import {
 import { Link, router } from 'expo-router';
 import { ArrowLeft, Calendar, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { z } from 'zod';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,9 +23,41 @@ export default function Register() {
     offeringHosting: false,
   });
 
-  const handleRegister = () => {
-    router.push('/account-setup');
+  const { register, isLoading, error, clearError } = useAuth();
+
+  const handleRegister = async () => {
+    const result = profileSchema.safeParse(formValues);
+    if (!result.success) {
+      // Extract error messages
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setErrors(fieldErrors);
+    } else {
+      await register({ email, password, name });
+      console.log('Registering user...');
+      // router.replace('/account-setup');
+    }
   };
+
+  const profileSchema = z
+    .object({
+      email: z.string().email(),
+      password: z.string().min(4),
+      confirmPassword: z.string().min(4),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      path: ['confirmPassword'], // 👈 This specifies where the error message should go
+      message: 'Passwords do not match',
+    });
+
+  const [formValues, setFormValues] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof typeof formValues, string[]>>
+  >({});
 
   return (
     <ScrollView style={styles.container}>
@@ -47,11 +81,18 @@ export default function Register() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email </Text>
             <TextInput
-              style={styles.input}
+              style={errors.email ? styles.input_err : styles.input}
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
+              value={formValues.email}
+              onChangeText={(text) =>
+                setFormValues({ ...formValues, email: text })
+              }
             />
+            {errors?.email && (
+              <Text style={{ color: 'red' }}>{errors?.email[0]}</Text>
+            )}
           </View>
 
           {/* <View style={styles.inputContainer}>
@@ -88,11 +129,21 @@ export default function Register() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Create Password</Text>
-            <View style={styles.passwordInput}>
+            <View
+              style={
+                errors?.password
+                  ? styles.passwordInput_err
+                  : styles.passwordInput
+              }
+            >
               <TextInput
                 style={styles.passwordField}
                 placeholder="Create a password"
                 secureTextEntry={!showPassword}
+                value={formValues.password}
+                onChangeText={(text) =>
+                  setFormValues({ ...formValues, password: text })
+                }
               />
               <TouchableOpacity
                 style={styles.eyeButton}
@@ -105,14 +156,27 @@ export default function Register() {
                 )}
               </TouchableOpacity>
             </View>
+            {errors?.password && (
+              <Text style={{ color: 'red' }}>{errors?.password[0]}</Text>
+            )}
           </View>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Comfirm Password</Text>
-            <View style={styles.passwordInput}>
+            <Text style={styles.label}>Confirm Password</Text>
+            <View
+              style={
+                errors?.confirmPassword
+                  ? styles.passwordInput_err
+                  : styles.passwordInput
+              }
+            >
               <TextInput
                 style={styles.passwordField}
                 placeholder="Create a password"
                 secureTextEntry={!showPassword}
+                value={formValues.confirmPassword}
+                onChangeText={(text) =>
+                  setFormValues({ ...formValues, confirmPassword: text })
+                }
               />
               <TouchableOpacity
                 style={styles.eyeButton}
@@ -125,6 +189,9 @@ export default function Register() {
                 )}
               </TouchableOpacity>
             </View>
+            {errors?.confirmPassword && (
+              <Text style={{ color: 'red' }}>{errors?.confirmPassword[0]}</Text>
+            )}
           </View>
 
           {/* <View style={styles.profileTypeContainer}>
@@ -273,6 +340,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter',
   },
+  input_err: {
+    borderWidth: 1,
+    borderColor: 'red',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    fontFamily: 'Inter',
+  },
   phoneInput: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -322,6 +397,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
+    borderRadius: 12,
+  },
+  passwordInput_err: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'red',
     borderRadius: 12,
   },
   passwordField: {
