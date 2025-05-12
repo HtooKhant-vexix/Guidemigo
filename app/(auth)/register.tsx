@@ -23,18 +23,21 @@ export default function Register() {
     offeringHosting: false,
   });
 
-  const { register, isLoading, error, clearError } = useAuth();
+  const { register, isLoading, error, clearError, user } = useAuth();
 
   const handleRegister = async () => {
     const result = profileSchema.safeParse(formValues);
     if (!result.success) {
-      // Extract error messages
       const fieldErrors = result.error.flatten().fieldErrors;
       setErrors(fieldErrors);
     } else {
-      await register({ email, password, name });
-      console.log('Registering user...');
-      // router.replace('/account-setup');
+      await register({
+        email: formValues.email,
+        password: formValues.password,
+        name: 'test',
+        type: 'traveller',
+      });
+      router.replace({ pathname: '/account-setup' });
     }
   };
 
@@ -45,7 +48,7 @@ export default function Register() {
       confirmPassword: z.string().min(4),
     })
     .refine((data) => data.password === data.confirmPassword, {
-      path: ['confirmPassword'], // 👈 This specifies where the error message should go
+      path: ['confirmPassword'],
       message: 'Passwords do not match',
     });
 

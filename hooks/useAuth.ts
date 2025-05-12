@@ -4,19 +4,28 @@ import { useAuthStore } from '../service/auth';
 import { router } from 'expo-router';
 
 export function useAuth() {
-  const { user, isLoading, error, login, register, logout, clearError } =
-    useAuthStore();
+  const {
+    user,
+    isLoading,
+    error,
+    login,
+    register,
+    logout,
+    clearError,
+    initializeAuth,
+  } = useAuthStore();
 
   useEffect(() => {
     const initAuth = async () => {
       try {
         const tokens = await AsyncStorage.getItem('tokens');
-        if (!tokens) return;
-
-        // Here you would typically validate the token and get user data
-        // For now, we'll just check if tokens exist
+        if (tokens) {
+          const parsedTokens = JSON.parse(tokens);
+          await initializeAuth(parsedTokens);
+        }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        await AsyncStorage.removeItem('tokens');
       }
     };
 

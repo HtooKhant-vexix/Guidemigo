@@ -9,8 +9,52 @@ import {
   Heart,
   MapPin,
 } from 'lucide-react-native';
+import { useMemo } from 'react';
 
 export default function TabLayout() {
+  const screenOptions = useMemo(
+    () => ({
+      headerShown: false,
+      tabBarActiveTintColor: '#00BCD4',
+      tabBarStyle: {
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+      },
+    }),
+    []
+  );
+
+  const tabs = useMemo(
+    () => [
+      {
+        name: 'index',
+        title: 'Home',
+        icon: House,
+      },
+      {
+        name: 'guidemigo',
+        title: 'Guides',
+        icon: User2,
+      },
+      {
+        name: 'feed',
+        title: 'Feed',
+        icon: Heart,
+      },
+      {
+        name: 'places',
+        title: 'Places',
+        icon: MapPin,
+      },
+      {
+        name: 'more',
+        title: 'More',
+        icon: Menu,
+      },
+    ],
+    []
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -33,65 +77,18 @@ export default function TabLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <House size={size + 10} color={color} /> // Increase size of the icon
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="guidemigo"
-        options={{
-          title: 'Guidemigo',
-          tabBarIcon: ({ color, size }) => (
-            <User2 size={size + 10} color={color} /> // Increase size of the icon
-          ),
-        }}
-      />
-      {/* <Tabs.Screen
-        name="hotelmigo"
-        options={{
-          title: 'Hotelmigo',
-          tabBarIcon: ({ color, size }) => (
-            <Building2 size={size + 10} color={color} /> // Increase size of the icon
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="airmigo"
-        options={{
-          title: 'Airmigo',
-          tabBarIcon: ({ color, size }) => (
-            <Plane size={size + 10} color={color} /> // Increase size of the icon
-          ),
-        }}
-      /> */}
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'Feed',
-          tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="places"
-        options={{
-          title: 'Places',
-          tabBarIcon: ({ color, size }) => <MapPin size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: 'More',
-          tabBarIcon: ({ color, size }) => (
-            <Menu size={size + 10} color={color} /> // Increase size of the icon
-          ),
-        }}
-      />
+      {tabs.map(({ name, title, icon: Icon }) => (
+        <Tabs.Screen
+          key={name}
+          name={name}
+          options={{
+            title,
+            tabBarIcon: ({ size, color }) => (
+              <Icon size={size + 10} color={color} />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,7 +16,6 @@ import {
   MapPin,
   MoveHorizontal as MoreHorizontal,
 } from 'lucide-react-native';
-import { useState } from 'react';
 
 const POSTS = [
   {
@@ -77,12 +77,99 @@ const POSTS = [
   },
 ];
 
+const PostHeader = memo(({ user, location }) => (
+  <View style={styles.postHeader}>
+    <TouchableOpacity
+      style={styles.userInfo}
+      onPress={() => router.push(`/profile/${user.name}`)}
+    >
+      <Image source={{ uri: user.avatar }} style={styles.avatar} />
+      <View>
+        <View style={styles.nameContainer}>
+          <Text style={styles.userName}>{user.name}</Text>
+          {user.isVerified && (
+            <View style={styles.verifiedBadge}>
+              <Text style={styles.verifiedText}>✓</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.locationContainer}>
+          <MapPin size={12} color="#666" />
+          <Text style={styles.location}>{location}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+    <TouchableOpacity>
+      <MoreHorizontal size={24} color="#666" />
+    </TouchableOpacity>
+  </View>
+));
+
+const PostContent = memo(({ content, images, onPress }) => (
+  <TouchableOpacity onPress={onPress} style={styles.postContent}>
+    <Text style={styles.postText}>{content}</Text>
+    <Image source={{ uri: images[0] }} style={styles.postImage} />
+  </TouchableOpacity>
+));
+
+const PostActions = memo(({ post, onLike }) => (
+  <View style={styles.postActions}>
+    <View style={styles.leftActions}>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() => onLike(post.id)}
+      >
+        <Heart
+          size={24}
+          color={post.isLiked ? '#FF4444' : '#666'}
+          fill={post.isLiked ? '#FF4444' : 'transparent'}
+        />
+        <Text style={styles.actionText}>{post.likes}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() => router.push(`/feed/post/${post.id}#comments`)}
+      >
+        <MessageCircle size={24} color="#666" />
+        <Text style={styles.actionText}>{post.comments}</Text>
+      </TouchableOpacity>
+    </View>
+    <TouchableOpacity style={styles.actionButton}>
+      <Share2 size={24} color="#666" />
+    </TouchableOpacity>
+  </View>
+));
+
+const Post = memo(({ post, onLike }) => (
+  <View style={styles.post}>
+    <PostHeader user={post.user} location={post.location} />
+    <PostContent
+      content={post.content}
+      images={post.images}
+      onPress={() => router.push(`/feed/post/${post.id}`)}
+    />
+    <PostActions post={post} onLike={onLike} />
+    <View style={styles.postFooter}>
+      <Text style={styles.timestamp}>{post.timestamp}</Text>
+    </View>
+  </View>
+));
+
+const Story = memo(({ story, onPress }) => (
+  <TouchableOpacity style={styles.storyButton} onPress={onPress}>
+    <Image source={{ uri: story.user.avatar }} style={styles.storyAvatar} />
+    <Text style={styles.storyName} numberOfLines={1}>
+      {story.user.name.split(' ')[0]}
+    </Text>
+  </TouchableOpacity>
+));
+
 export default function Feed() {
   const [posts, setPosts] = useState(POSTS);
 
-  const toggleLike = (postId: string) => {
-    setPosts(
-      posts.map((post) => {
+  const toggleLike = useCallback((postId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((post) => {
         if (post.id === postId) {
           return {
             ...post,
@@ -93,10 +180,10 @@ export default function Feed() {
         return post;
       })
     );
-  };
+  }, []);
 
-  return (
-    <ScrollView style={styles.container}>
+  const headerContent = useMemo(
+    () => (
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Activity Feed</Text>
         <TouchableOpacity
@@ -106,7 +193,12 @@ export default function Feed() {
           <Text style={styles.newPostButtonText}>New Post</Text>
         </TouchableOpacity>
       </View>
+    ),
+    []
+  );
 
+  const storiesContent = useMemo(
+    () => (
       <View style={styles.stories}>
         <ScrollView
           horizontal
@@ -119,90 +211,25 @@ export default function Feed() {
             </View>
             <Text style={styles.addStoryText}>Add Story</Text>
           </TouchableOpacity>
-          {posts.map((post, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.storyButton}
+          {posts.map((post) => (
+            <Story
+              key={post.id}
+              story={post}
               onPress={() => router.push(`/feed/story/${post.id}`)}
-            >
-              <Image
-                source={{ uri: post.user.avatar }}
-                style={styles.storyAvatar}
-              />
-              <Text style={styles.storyName} numberOfLines={1}>
-                {post.user.name.split(' ')[0]}
-              </Text>
-            </TouchableOpacity>
+            />
           ))}
         </ScrollView>
       </View>
+    ),
+    [posts]
+  );
 
+  return (
+    <ScrollView style={styles.container}>
+      {headerContent}
+      {storiesContent}
       {posts.map((post) => (
-        <View key={post.id} style={styles.post}>
-          <View style={styles.postHeader}>
-            <TouchableOpacity
-              style={styles.userInfo}
-              onPress={() => router.push(`/profile/${post.user.name}`)}
-            >
-              <Image source={{ uri: post.user.avatar }} style={styles.avatar} />
-              <View>
-                <View style={styles.nameContainer}>
-                  <Text style={styles.userName}>{post.user.name}</Text>
-                  {post.user.isVerified && (
-                    <View style={styles.verifiedBadge}>
-                      <Text style={styles.verifiedText}>✓</Text>
-                    </View>
-                  )}
-                </View>
-                <View style={styles.locationContainer}>
-                  <MapPin size={12} color="#666" />
-                  <Text style={styles.location}>{post.location}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <MoreHorizontal size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => router.push(`/feed/post/${post.id}`)}
-            style={styles.postContent}
-          >
-            <Text style={styles.postText}>{post.content}</Text>
-            <Image source={{ uri: post.images[0] }} style={styles.postImage} />
-          </TouchableOpacity>
-
-          <View style={styles.postActions}>
-            <View style={styles.leftActions}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => toggleLike(post.id)}
-              >
-                <Heart
-                  size={24}
-                  color={post.isLiked ? '#FF4444' : '#666'}
-                  fill={post.isLiked ? '#FF4444' : 'transparent'}
-                />
-                <Text style={styles.actionText}>{post.likes}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => router.push(`/feed/post/${post.id}#comments`)}
-              >
-                <MessageCircle size={24} color="#666" />
-                <Text style={styles.actionText}>{post.comments}</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.actionButton}>
-              <Share2 size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.postFooter}>
-            <Text style={styles.timestamp}>{post.timestamp}</Text>
-          </View>
-        </View>
+        <Post key={post.id} post={post} onLike={toggleLike} />
       ))}
     </ScrollView>
   );

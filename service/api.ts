@@ -30,7 +30,7 @@ interface RegisterData extends LoginCredentials {
 
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:9000',
+  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.165:3000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         })
       );
       set({
-        user: response.data.user,
+        user: response.data.data.user,
         accessToken: response.data.accessToken,
         refreshToken: response.data.refreshToken,
         isLoading: false,
