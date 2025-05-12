@@ -12,8 +12,10 @@ import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(
+    'digitalengineeringtech.frontend@gmail.com'
+  );
+  const [password, setPassword] = useState('asdffdsa');
   const { login, isLoading, error, clearError } = useAuth();
 
   const handleLogin = async () => {

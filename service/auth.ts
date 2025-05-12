@@ -75,19 +75,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ isLoading: true, error: null });
       const { data } = await api.post('/auth/login', credentials);
+      // console.log('Login response:', data.data.accessToken);
 
       await AsyncStorage.setItem(
         'tokens',
         JSON.stringify({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
+          accessToken: data.data.accessToken,
+          refreshToken: data.data.refreshToken,
         })
       );
 
       set({
-        user: data.user,
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
+        user: data.data.user,
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
         isLoading: false,
       });
     } catch (error) {
