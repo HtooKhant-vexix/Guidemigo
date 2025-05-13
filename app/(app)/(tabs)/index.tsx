@@ -18,6 +18,8 @@ import {
   Languages,
   Clock,
 } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/service/auth';
 
 const PLACES = [
   {
@@ -78,6 +80,9 @@ const ads = [
 ];
 
 export default function Home() {
+  const { user } = useAuthStore();
+  console.log(user, 'user');
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.bg}>
@@ -108,7 +113,13 @@ export default function Home() {
       </View>
 
       <View style={styles.roleContainer}>
-        <TouchableOpacity style={styles.roleButton}>
+        <TouchableOpacity
+          style={styles.roleButton}
+          onPress={async () => {
+            const tokens = await AsyncStorage.getItem('tokens');
+            console.log(tokens, 'tokens');
+          }}
+        >
           {/* <Image
             source={{
               uri: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b',

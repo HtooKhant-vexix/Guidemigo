@@ -1,20 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { router } from 'expo-router';
 import { create } from 'zustand';
 
-// Types
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
 
 interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   avatar?: string;
-  type: string;
+  role?: string | null;
 }
 
 interface AuthState {
@@ -23,18 +21,18 @@ interface AuthState {
   refreshToken: string | null;
   isLoading: boolean;
   error: string | null;
+  isAuthenticated: boolean; // Added this property
+  initializeAuth: (tokens: AuthTokens) => Promise<void>;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (data: {
     email: string;
     password: string;
     name: string;
-    type: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
 
-// Create axios instance
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
   headers: {
@@ -44,23 +42,39 @@ const api = axios.create({
 
 let refreshPromise: Promise<AuthTokens> | null = null;
 
-// Auth store
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
   refreshToken: null,
   isLoading: false,
   error: null,
+  isAuthenticated: false,
 
   initializeAuth: async (tokens: AuthTokens) => {
     try {
       set({ isLoading: true });
-      const response = await api.get('/auth/me', {
-        headers: { Authorization: `Bearer ${tokens.accessToken}` },
-      });
+      // const response = await api.get('/auth/refresh-token', {
+      //   headers: { Authorization: `Bearer ${tokens.accessToken}` },
+      // });
+
+      const response = await api.post(
+        '/auth/refresh-token',
+        {
+          refreshToken: tokens.refreshToken,
+        },
+        {
+          headers: { Authorization: `Bearer ${tokens.accessToken}` },
+        }
+      );
 
       set({
-        user: response.data,
+        user: {
+          email: 'digitalengineeringtech.frontend@gmail.com',
+          id: 11,
+          role: null,
+          name: '',
+        },
+        isAuthenticated: true,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         isLoading: false,
@@ -75,8 +89,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ isLoading: true, error: null });
       const { data } = await api.post('/auth/login', credentials);
-      // console.log('Login response:', data.data.accessToken);
-
+      // console.log(data.data.accessToken);
+      // console.log(data.data.refreshToken);
+      // console.log(data.data.user);
       await AsyncStorage.setItem(
         'tokens',
         JSON.stringify({
@@ -103,14 +118,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (data) => {
     try {
       set({ isLoading: true, error: null });
-      console.log('Registerstart');
       const response = await api.post('/auth/register', data);
-      console.log('Register response:', response.data.data.user);
-
-      if (!response.data.success) {
-        throw new Error('Registration failed');
-      }
-      // Uncomment the following lines to store tokens in AsyncStorage
 
       await AsyncStorage.setItem(
         'tokens',
@@ -121,23 +129,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       );
 
       set({
-        user: response?.data?.data?.user,
+        user: response.data.user,
         accessToken: response.data.accessToken,
         refreshToken: response.data.refreshToken,
         isLoading: false,
       });
-
-      // router.replace({
-      //   pathname: '/account-setup',
-      //   params: { id: response.data.data.user.id },
-      // });
-      console.log('Register implemented yet');
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to register',
         isLoading: false,
       });
-      console.error('Register error:', error.message);
+      throw error;
     }
   },
 
@@ -157,7 +159,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearError: () => set({ error: null }),
 }));
 
-// Axios interceptors
 api.interceptors.request.use(
   async (config) => {
     const tokens = await AsyncStorage.getItem('tokens');
@@ -185,7 +186,7 @@ api.interceptors.response.use(
 
           const { refreshToken } = JSON.parse(tokens) as AuthTokens;
           refreshPromise = api
-            .post<AuthTokens>('/auth/refresh', { refreshToken })
+            .post<AuthTokens>('/auth/refresh-token', { refreshToken })
             .then((response) => response.data)
             .finally(() => {
               refreshPromise = null;
@@ -193,6 +194,7 @@ api.interceptors.response.use(
         }
 
         const newTokens = await refreshPromise;
+        console.log(newTokens, '.......................................');
         await AsyncStorage.setItem('tokens', JSON.stringify(newTokens));
 
         originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;

@@ -43,7 +43,8 @@ export default function AccountSetup() {
     gender: z.string().min(1, 'Gender is required'),
     bio: z.string().min(1, 'Bio is required'),
     location: z.string().min(1, 'Location is required'),
-    languages: z.string().min(1, 'Languages are required'),
+    languages: z.array(z.string()).min(1, 'At least one language is required'),
+    expertise: z.array(z.string()).min(1, 'At least one expertise is required'),
   });
 
   const [formValues, setFormValues] = useState<{
@@ -164,9 +165,9 @@ export default function AccountSetup() {
     );
     setFormValues({
       ...formValues,
-      languages: selectedLanguages.includes(expert)
-        ? selectedLanguages.filter((l) => l !== expert)
-        : [...selectedLanguages, expert],
+      expertise: selectedExpertise.includes(expert)
+        ? selectedExpertise.filter((l) => l !== expert)
+        : [...selectedExpertise, expert],
     });
   };
 
@@ -580,7 +581,7 @@ export default function AccountSetup() {
                 >
                   {selectedExpertise.length > 0
                     ? selectedExpertise.join(', ')
-                    : 'Select languages'}
+                    : 'Select Expertise'}
                 </Text>
                 <ChevronDown size={20} color="#666" />
               </View>

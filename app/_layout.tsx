@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Slot, Stack } from 'expo-router';
+import { Slot, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -11,31 +11,56 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might trigger some race conditions, ignore them */
+});
 
 export default function RootLayout() {
   useFrameworkReady();
   const { isAuthenticated, isLoading } = useAuth();
-  const [fontsLoaded] = useFonts({
+  const segments = useSegments();
+  const router = useRouter();
+
+  console.log('RootLayout segments:', segments);
+  console.log('RootLayout isAuthenticated:', isAuthenticated);
+
+  const [fontsLoaded, fontError] = useFonts({
     Inter: Inter_400Regular,
     InterSemiBold: Inter_600SemiBold,
     InterBold: Inter_700Bold,
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
-      // Hide splash screen once fonts are loaded
-      SplashScreen.hideAsync();
-      SplashScreen.setOptions({
-        duration: 1000,
-        fade: true,
-      });
-      window.frameworkReady?.();
-    }
-  }, [fontsLoaded]);
+    const prepare = async () => {
+      try {
+        await SplashScreen.preventAutoHideAsync();
 
-  if (!fontsLoaded || isLoading) {
+        if (fontsLoaded || fontError) {
+          await SplashScreen.hideAsync();
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    };
+
+    prepare();
+  }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    if (isLoading || !fontsLoaded) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    const inAppGroup = segments[0] === '(app)';
+
+    if (!isAuthenticated && !inAuthGroup && segments[0] !== 'welcome') {
+      router.replace('/welcome');
+    } else if (isAuthenticated && (inAuthGroup || segments[0] === 'welcome')) {
+      router.replace('/(app)/(tabs)');
+    }
+  }, [isAuthenticated, segments, isLoading, fontsLoaded]);
+
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 

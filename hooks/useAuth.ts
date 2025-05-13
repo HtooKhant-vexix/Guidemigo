@@ -13,6 +13,7 @@ export function useAuth() {
     logout,
     clearError,
     initializeAuth,
+    isAuthenticated,
   } = useAuthStore();
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function useAuth() {
     user,
     isLoading,
     error,
-    isAuthenticated: !!user,
+    isAuthenticated: isAuthenticated,
     login,
     register,
     logout: handleLogout,
