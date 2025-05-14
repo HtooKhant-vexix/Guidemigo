@@ -1,3 +1,11 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+  created_at: string;
+}
+
 export interface Host {
   id: string;
   name: string;
@@ -22,10 +30,31 @@ export interface Place {
   id: string;
   name: string;
   location: string;
-  image: string;
+  image_url: string;
   rating: number;
   duration: string;
-  groupSize: string;
+  group_size: string;
   description: string;
   highlights: string[];
+  created_at: string;
+  user_id: string;
+}
+
+export interface Post {
+  id: string;
+  content: string;
+  location?: string;
+  user: User;
+  images: string[];
+  likes: number;
+  comments: number;
+  created_at: string;
+  isLiked: boolean;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  user: User;
+  created_at: string;
 }

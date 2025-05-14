@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/service/auth';
+import { useHosts, usePlaces } from '@/hooks/useData';
 
 const PLACES = [
   {
@@ -82,6 +84,28 @@ const ads = [
 export default function Home() {
   const { user } = useAuthStore();
   console.log(user, 'user');
+
+  const { places, loading: placesLoading, error: placesError } = usePlaces();
+  const { hosts, loading: hostsLoading, error: hostsError } = useHosts();
+
+  console.log(hosts, 'hosts');
+  console.log(places, 'places');
+
+  if (placesLoading || hostsLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#00BCD4" />
+      </View>
+    );
+  }
+
+  if (placesError || hostsError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{placesError || hostsError}</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -175,28 +199,32 @@ export default function Home() {
           showsHorizontalScrollIndicator={false}
           style={styles.hostsList}
         >
-          {HOSTS.map((host) => (
+          {/* {HOSTS.map((host) => ( */}
+          {hosts.map((host) => (
             <TouchableOpacity
               key={host.id}
               style={styles.hostCard}
               onPress={() => router.push(`/hosts/${host.id}`)}
             >
-              <Image source={host.image} style={styles.hostImage} />
+              <Image
+                source={HOSTS[0].image || hosts?.profile.image}
+                style={styles.hostImage}
+              />
               <View style={styles.hostInfo}>
                 <View style={styles.name}>
-                  <Text style={styles.hostName}>{host.name}</Text>
+                  <Text style={styles.hostName}>{host.profile.name}</Text>
                   <Bookmark size={23} color="#000" />
                 </View>
                 <View style={styles.hostRating}>
                   <CircleUserRound size={19} color="#00BCD4" />
                   <Text style={styles.hostDetails}>
-                    Hosted {host.travelers} Travelers
+                    Hosted {host.profile.travelers || 13} Travelers
                   </Text>
                 </View>
                 <View style={styles.hostRating}>
                   <Languages size={19} color="#00BCD4" />
                   <Text style={styles.hostLanguages}>
-                    {host.languages.join(', ')}
+                    {host.profile?.languages?.join(', ')}
                   </Text>
                 </View>
               </View>
@@ -217,13 +245,13 @@ export default function Home() {
           showsHorizontalScrollIndicator={false}
           style={styles.placesList}
         >
-          {PLACES.map((place) => (
+          {places.map((place) => (
             <TouchableOpacity
               key={place.id}
               style={styles.placeCard}
               onPress={() => router.push(`/places/${place.id}`)}
             >
-              <Image source={place.image} style={styles.placeImage} />
+              <Image source={PLACES[0].image} style={styles.placeImage} />
               <Text style={styles.placeName}>{place.name}</Text>
               <View style={styles.placeLocation}>
                 <MapPin size={16} color="#00BCD4" />
@@ -291,6 +319,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    fontFamily: 'Inter',
   },
   locationLabel: {
     fontSize: 20,

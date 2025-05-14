@@ -7,9 +7,11 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Search, MapPin, Star, Clock, Users } from 'lucide-react-native';
+import { usePlaces } from '@/hooks/useData';
 
 const CATEGORIES = [
   { id: '1', name: 'Popular', icon: '🔥' },
@@ -80,63 +82,39 @@ const TRENDING_PLACES = [
   },
 ];
 
-const SearchBar = memo(({ onSearch }) => (
-  <View style={styles.searchBar}>
-    <Search size={20} color="#666" />
-    <TextInput
-      style={styles.searchInput}
-      placeholder="Search places..."
-      placeholderTextColor="#666"
-      onChangeText={onSearch}
-    />
-  </View>
-));
+export default function Places() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const { places, loading, error } = usePlaces();
 
-const CategoryButton = memo(({ category, onPress }) => (
-  <TouchableOpacity
-    style={styles.categoryButton}
-    onPress={() => onPress(category.id)}
-  >
-    <Text style={styles.categoryIcon}>{category.icon}</Text>
-    <Text style={styles.categoryName}>{category.name}</Text>
-  </TouchableOpacity>
-));
-
-const FeaturedCard = memo(({ place }) => (
-  <TouchableOpacity
-    style={styles.featuredCard}
-    onPress={() => router.push(`/places/${place.id}`)}
-  >
-    <Image source={{ uri: place.image }} style={styles.featuredImage} />
-    <View style={styles.featuredContent}>
-      <Text style={styles.placeName}>{place.name}</Text>
-      <View style={styles.placeInfo}>
-        <View style={styles.locationContainer}>
-          <MapPin size={14} color="#666" />
-          <Text style={styles.locationText}>{place.location}</Text>
-        </View>
-        <View style={styles.ratingContainer}>
-          <Star size={14} color="#FFD700" />
-          <Text style={styles.ratingText}>
-            {place.rating} ({place.reviews})
-          </Text>
-        </View>
-      </View>
-      <View style={styles.categoryTag}>
-        <Text style={styles.categoryTagText}>{place.category}</Text>
-      </View>
+  const SearchBar = memo(({ onSearch }) => (
+    <View style={styles.searchBar}>
+      <Search size={20} color="#666" />
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search places..."
+        placeholderTextColor="#666"
+        onChangeText={onSearch}
+      />
     </View>
-  </TouchableOpacity>
-));
+  ));
 
-const TrendingCard = memo(({ place }) => (
-  <TouchableOpacity
-    style={styles.trendingCard}
-    onPress={() => router.push(`/places/${place.id}`)}
-  >
-    <Image source={{ uri: place.image }} style={styles.trendingImage} />
-    <View style={styles.trendingContent}>
-      <View>
+  const CategoryButton = memo(({ category, onPress }) => (
+    <TouchableOpacity
+      style={styles.categoryButton}
+      onPress={() => onPress(category.id)}
+    >
+      <Text style={styles.categoryIcon}>{category.icon}</Text>
+      <Text style={styles.categoryName}>{category.name}</Text>
+    </TouchableOpacity>
+  ));
+
+  const FeaturedCard = memo(({ place }) => (
+    <TouchableOpacity
+      style={styles.featuredCard}
+      onPress={() => router.push(`/places/${place.id}`)}
+    >
+      <Image source={{ uri: place.image }} style={styles.featuredImage} />
+      <View style={styles.featuredContent}>
         <Text style={styles.placeName}>{place.name}</Text>
         <View style={styles.placeInfo}>
           <View style={styles.locationContainer}>
@@ -145,19 +123,75 @@ const TrendingCard = memo(({ place }) => (
           </View>
           <View style={styles.ratingContainer}>
             <Star size={14} color="#FFD700" />
-            <Text style={styles.ratingText}>{place.rating}</Text>
+            <Text style={styles.ratingText}>
+              {place.rating} ({place.reviews})
+            </Text>
           </View>
         </View>
+        <View style={styles.categoryTag}>
+          <Text style={styles.categoryTagText}>{place.category}</Text>
+        </View>
       </View>
-      <View style={styles.priceTag}>
-        <Text style={styles.priceText}>{place.price}</Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-));
+    </TouchableOpacity>
+  ));
 
-export default function Places() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const TrendingCard = memo(({ place }) => (
+    <TouchableOpacity
+      style={styles.trendingCard}
+      onPress={() => router.push(`/places/${place.id}`)}
+    >
+      <Image source={{ uri: place.image }} style={styles.trendingImage} />
+      <View style={styles.trendingContent}>
+        <View>
+          <Text style={styles.placeName}>{place.name}</Text>
+          <View style={styles.placeInfo}>
+            <View style={styles.locationContainer}>
+              <MapPin size={14} color="#666" />
+              <Text style={styles.locationText}>{place.location}</Text>
+            </View>
+            <View style={styles.ratingContainer}>
+              <Star size={14} color="#FFD700" />
+              <Text style={styles.ratingText}>{place.rating}</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.priceTag}>
+          <Text style={styles.priceText}>{place.price}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  ));
+
+  // const featuredPlaces = places?.slice(0, 3);
+  // const trendingPlaces = places?.slice(3, 6);
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00BCD4" />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView style={styles.container}>
+        {headerContent}
+        {searchContent}
+        {categoriesContent}
+        {featuredContent}
+        {trendingContent}
+      </ScrollView>
+    );
+  };
 
   const headerContent = useMemo(
     () => (
@@ -239,16 +273,7 @@ export default function Places() {
     ),
     []
   );
-
-  return (
-    <ScrollView style={styles.container}>
-      {headerContent}
-      {searchContent}
-      {categoriesContent}
-      {featuredContent}
-      {trendingContent}
-    </ScrollView>
-  );
+  return <>{renderContent()}</>;
 }
 
 const styles = StyleSheet.create({
@@ -265,6 +290,24 @@ const styles = StyleSheet.create({
     fontFamily: 'InterBold',
     color: '#000',
     marginBottom: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    fontFamily: 'Inter',
   },
   headerSubtitle: {
     fontSize: 16,

@@ -57,6 +57,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       //   headers: { Authorization: `Bearer ${tokens.accessToken}` },
       // });
 
+      console.log('init..............................');
+
       const response = await api.post(
         '/auth/refresh-token',
         {
@@ -66,6 +68,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           headers: { Authorization: `Bearer ${tokens.accessToken}` },
         }
       );
+
+      console.log(response.data, 'response...........................');
 
       set({
         user: {

@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -16,6 +17,7 @@ import {
   MapPin,
   MoveHorizontal as MoreHorizontal,
 } from 'lucide-react-native';
+import { usePosts } from '@/hooks/useData';
 
 const POSTS = [
   {
@@ -108,14 +110,14 @@ const PostHeader = memo(({ user, location }) => (
 const PostContent = memo(({ content, images, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.postContent}>
     <Text style={styles.postText}>{content}</Text>
-    <Image source={{ uri: images[0] }} style={styles.postImage} />
+    <Image source={{ uri: images }} style={styles.postImage} />
   </TouchableOpacity>
 ));
 
 const PostActions = memo(({ post, onLike }) => (
   <View style={styles.postActions}>
     <View style={styles.leftActions}>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.actionButton}
         onPress={() => onLike(post.id)}
       >
@@ -132,7 +134,7 @@ const PostActions = memo(({ post, onLike }) => (
       >
         <MessageCircle size={24} color="#666" />
         <Text style={styles.actionText}>{post.comments}</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
     <TouchableOpacity style={styles.actionButton}>
       <Share2 size={24} color="#666" />
@@ -142,15 +144,15 @@ const PostActions = memo(({ post, onLike }) => (
 
 const Post = memo(({ post, onLike }) => (
   <View style={styles.post}>
-    <PostHeader user={post.user} location={post.location} />
+    <PostHeader user={post.author} location={'singapore'} />
     <PostContent
       content={post.content}
-      images={post.images}
+      images={'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6'}
       onPress={() => router.push(`/feed/post/${post.id}`)}
     />
     <PostActions post={post} onLike={onLike} />
     <View style={styles.postFooter}>
-      <Text style={styles.timestamp}>{post.timestamp}</Text>
+      <Text style={styles.timestamp}>2hr ago</Text>
     </View>
   </View>
 ));
@@ -165,7 +167,10 @@ const Story = memo(({ story, onPress }) => (
 ));
 
 export default function Feed() {
+  const { posts: data, loading, error, handleLike } = usePosts();
+
   const [posts, setPosts] = useState(POSTS);
+  console.log('........', data);
 
   const toggleLike = useCallback((postId: string) => {
     setPosts((currentPosts) =>
@@ -223,16 +228,34 @@ export default function Feed() {
     ),
     [posts]
   );
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00BCD4" />
+        </View>
+      );
+    }
 
-  return (
-    <ScrollView style={styles.container}>
-      {headerContent}
-      {storiesContent}
-      {posts.map((post) => (
-        <Post key={post.id} post={post} onLike={toggleLike} />
-      ))}
-    </ScrollView>
-  );
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView style={styles.container}>
+        {headerContent}
+        {/* {storiesContent} */}
+        {data.map((post) => (
+          <Post key={post.id} post={post} onLike={toggleLike} />
+        ))}
+      </ScrollView>
+    );
+  };
+  return <>{renderContent()}</>;
 }
 
 const styles = StyleSheet.create({
@@ -241,6 +264,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
+    position: 'sticky',
+    top: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -276,6 +301,23 @@ const styles = StyleSheet.create({
   },
   addStoryButton: {
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    fontFamily: 'Inter',
   },
   addStoryIcon: {
     width: 64,

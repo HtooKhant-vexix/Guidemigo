@@ -118,6 +118,59 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearError: () => set({ error: null }),
 }));
 
+// Places API
+export const fetchPlaces = async () => {
+  const { data } = await api.get('/location');
+  console.log(data, '.......');
+  return data;
+};
+
+export const fetchPlace = async (id: string) => {
+  const { data } = await api.get(`/places/${id}`);
+  return data;
+};
+
+// Posts API
+export const fetchPosts = async () => {
+  const { data } = await api.get('/activity');
+  return data;
+};
+
+export const fetchTour = async () => {
+  const { data } = await api.get('/tour');
+  return data;
+};
+
+export const createPost = async (postData: {
+  content: string;
+  location?: string;
+  images?: string[];
+}) => {
+  const { data } = await api.post('/posts', postData);
+  return data;
+};
+
+export const likePost = async (postId: string) => {
+  const { data } = await api.post(`/posts/${postId}/like`);
+  return data;
+};
+
+export const unlikePost = async (postId: string) => {
+  const { data } = await api.delete(`/posts/${postId}/like`);
+  return data;
+};
+
+// Hosts API
+export const fetchHosts = async () => {
+  const { data } = await api.get('/user/all');
+  return data;
+};
+
+export const fetchHost = async (id: string) => {
+  const { data } = await api.get(`/hosts/${id}`);
+  return data;
+};
+
 // Axios interceptors
 api.interceptors.request.use(
   async (config) => {
@@ -144,7 +197,7 @@ api.interceptors.response.use(
         if (!tokens) throw new Error('No refresh token');
 
         const { refreshToken } = JSON.parse(tokens) as AuthTokens;
-        const { data } = await api.post<AuthTokens>('/auth/refresh', {
+        const { data } = await api.post<AuthTokens>('/auth/refresh-token', {
           refreshToken,
         });
 

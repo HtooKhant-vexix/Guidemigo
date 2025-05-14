@@ -5,9 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MapPin, Calendar, Users, Star } from 'lucide-react-native';
+import { useHosts, useTours } from '@/hooks/useData';
 
 const UPCOMING_TOURS = [
   {
@@ -69,6 +71,43 @@ const RECOMMENDED_TOURS = [
 ];
 
 export default function Guidemigo() {
+  const { hosts, loading: userLoading, error: userErr } = useHosts();
+  const { tours, loading, error } = useTours();
+  console.log(hosts, '......hosts');
+  console.log(tours, '......tours');
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#00BCD4" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  // const upcomingTours = hosts?.slice(0, 2).map((host) => ({
+  //   id: host.id,
+  //   name: `Tour with ${host.name}`,
+  //   date: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000)
+  //     .toISOString()
+  //     .split('T')[0],
+  //   time: '09:00 AM',
+  //   location: 'Singapore',
+  //   guide: {
+  //     name: host.name,
+  //     image: host.image,
+  //     rating: host.rating,
+  //   },
+  //   participants: Math.floor(Math.random() * 8) + 2,
+  // }));
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -166,6 +205,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    fontFamily: 'Inter',
   },
   header: {
     padding: 16,
