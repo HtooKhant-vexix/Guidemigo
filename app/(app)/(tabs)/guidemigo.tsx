@@ -10,6 +10,7 @@ import {
 import { router } from 'expo-router';
 import { MapPin, Calendar, Users, Star } from 'lucide-react-native';
 import { useHosts, useTours } from '@/hooks/useData';
+import { SkeletonHostCard } from '@/components/SkeletonHostCard';
 
 const UPCOMING_TOURS = [
   {
@@ -78,9 +79,11 @@ export default function Guidemigo() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00BCD4" />
-      </View>
+      <ScrollView style={styles.container}>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <SkeletonHostCard key={index} />
+        ))}
+      </ScrollView>
     );
   }
 

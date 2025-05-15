@@ -18,6 +18,7 @@ import {
   MoveHorizontal as MoreHorizontal,
 } from 'lucide-react-native';
 import { usePosts } from '@/hooks/useData';
+import { SkeletonFeedPost } from '@/components/SkeletonFeedPost';
 
 const POSTS = [
   {
@@ -231,9 +232,11 @@ export default function Feed() {
   const renderContent = () => {
     if (loading) {
       return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00BCD4" />
-        </View>
+        <ScrollView style={styles.container}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonFeedPost key={index} />
+          ))}
+        </ScrollView>
       );
     }
 

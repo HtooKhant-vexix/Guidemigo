@@ -10,13 +10,13 @@ interface AuthTokens {
 interface User {
   id: number;
   email: string;
-  name: string;
+  name?: string;
   avatar?: string;
   role?: string | null;
 }
 
 interface AuthState {
-  user: User | null;
+  user: User | null | undefined;
   accessToken: string | null;
   refreshToken: string | null;
   isLoading: boolean;
@@ -28,9 +28,11 @@ interface AuthState {
     email: string;
     password: string;
     name: string;
+    type: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  setup: any;
 }
 
 const api = axios.create({
@@ -69,15 +71,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
       );
 
-      console.log(response.data, 'response...........................');
+      console.log(
+        response.data.data.user,
+        'response...........................'
+      );
 
       set({
-        user: {
-          email: 'digitalengineeringtech.frontend@gmail.com',
-          id: 11,
-          role: null,
-          name: '',
-        },
+        user: response.data.data.user,
         isAuthenticated: true,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -124,25 +124,97 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: true, error: null });
       const response = await api.post('/auth/register', data);
 
-      await AsyncStorage.setItem(
-        'tokens',
-        JSON.stringify({
-          accessToken: response.data.accessToken,
-          refreshToken: response.data.refreshToken,
-        })
-      );
+      // await AsyncStorage.setItem(
+      //   'tokens',
+      //   JSON.stringify({
+      //     accessToken: response.data.data.accessToken,
+      //     refreshToken: response.data.data.refreshToken,
+      //   })
+      // );
 
       set({
-        user: response.data.user,
-        accessToken: response.data.accessToken,
-        refreshToken: response.data.refreshToken,
         isLoading: false,
       });
+      return {
+        user: response.data.data.user.id,
+        accessToken: response.data.data.accessToken,
+        refreshToken: response.data.data.refreshToken,
+      };
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to register',
         isLoading: false,
       });
+      throw error;
+    }
+  },
+
+  setup: async (data, token) => {
+    try {
+      set({ isLoading: true, error: null });
+      console.log(
+        Number(data.id),
+        token,
+        `/user/profile/update?id=${Number(data.id)}`,
+        'data.....gg......................'
+      );
+
+      const formData = new FormData();
+      formData.append('id', data.id);
+      formData.append('name', data.name);
+      formData.append('bio', data.bio);
+      formData.append('dob', data.dob);
+      formData.append('gender', data.gender);
+      formData.append('location', data.location);
+      formData.append('phonenumber', data.phonenumber);
+      formData.append('type', data.type);
+      formData.append('experience', data.experience || '');
+      formData.append('travellers', data.travellers.toString());
+      data.languages.forEach((language) =>
+        formData.append('languages[]', language)
+      );
+      data.expertise?.forEach((expertise) =>
+        formData.append('expertise[]', expertise)
+      );
+
+      console.log('FormData:', formData);
+
+      const response = await axios.patch(
+        `/user/profile/update?id=${Number(data.id)}`,
+        formData,
+        {
+          baseURL:
+            process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.165:3000',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token.accessToken}`,
+          },
+        }
+      );
+      console.log(response, 'response...........................');
+
+      await AsyncStorage.setItem(
+        'tokens',
+        JSON.stringify({
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+        })
+      );
+
+      set({
+        user: response.data.user,
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        isLoading: false,
+      });
+
+      return response.data;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to register',
+        isLoading: false,
+      });
+      console.log(error, 'error...........................');
       throw error;
     }
   },
@@ -154,6 +226,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null,
         accessToken: null,
         refreshToken: null,
+        isAuthenticated: false,
       });
     } catch (error) {
       console.error('Logout error:', error);

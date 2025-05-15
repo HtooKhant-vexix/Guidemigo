@@ -31,13 +31,22 @@ export default function Register() {
       const fieldErrors = result.error.flatten().fieldErrors;
       setErrors(fieldErrors);
     } else {
-      await register({
+      const tokens = await register({
         email: formValues.email,
         password: formValues.password,
         name: 'test',
         type: 'traveller',
       });
-      router.replace({ pathname: '/account-setup' });
+
+      if (tokens !== undefined && tokens !== null) {
+        console.log(tokens, 'tokens*******************************');
+        router.replace({
+          pathname: '/account-setup',
+          params: tokens,
+        });
+      } else {
+        console.error('Registration failed: No tokens returned');
+      }
     }
   };
 

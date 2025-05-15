@@ -19,6 +19,8 @@ import { useState } from 'react';
 import { z } from 'zod';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import Swal from 'sweetalert2';
+import { useAuth } from '@/hooks/useAuth';
+import { useLocalSearchParams } from 'expo-router';
 // import * as ImagePicker from 'expo-image-picker';
 
 export default function AccountSetup() {
@@ -135,6 +137,10 @@ export default function AccountSetup() {
 
   const [showCountryCodes, setShowCountryCodes] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
+  const token = useLocalSearchParams();
+  // console.log(token, '***********************');
+
+  const { setup, isLoading, error, clearError, user } = useAuth();
 
   const handleDateConfirm = (date: Date) => {
     setSelectedDate(date);
@@ -171,10 +177,6 @@ export default function AccountSetup() {
     });
   };
 
-  console.log('Selected Languages:', selectedLanguages);
-  console.log('Selected Country:', selectedCountry);
-  console.log('Selected date:', selectedDate?.toString());
-
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -190,7 +192,8 @@ export default function AccountSetup() {
   //   });
   // };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    console.log('clicked', token);
     const result = profileSchema.safeParse(formValues);
 
     if (!result.success) {
@@ -198,12 +201,21 @@ export default function AccountSetup() {
       const fieldErrors = result.error.flatten().fieldErrors;
       setErrors(fieldErrors);
     } else {
+      const response = await setup(
+        {
+          ...formValues,
+          id: token?.user,
+        },
+        token
+      );
+      response.success && router.replace('/(app)/(tabs)');
+      // console.log('Response:', response);
       // Validation passed — continue to next screen
-      router.replace('/(app)/(tabs)');
+      // router.replace('/(app)/(tabs)');
     }
   };
 
-  console.log('Form Values:', formValues);
+  // console.log('Form Values:', formValues);
 
   // const handlePhotoUpload = async () => {
   //   // Request permissions first

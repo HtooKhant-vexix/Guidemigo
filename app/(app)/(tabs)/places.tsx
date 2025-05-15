@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import { Search, MapPin, Star, Clock, Users } from 'lucide-react-native';
 import { usePlaces } from '@/hooks/useData';
+import { SkeletonPlaceCard } from '@/components/SkeletonPlaceCard';
 
 const CATEGORIES = [
   { id: '1', name: 'Popular', icon: '🔥' },
@@ -168,9 +169,11 @@ export default function Places() {
   const renderContent = () => {
     if (loading) {
       return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00BCD4" />
-        </View>
+        <ScrollView style={styles.container}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonPlaceCard key={index} />
+          ))}
+        </ScrollView>
       );
     }
 

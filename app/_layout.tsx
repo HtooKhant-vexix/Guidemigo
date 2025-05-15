@@ -22,9 +22,6 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
 
-  console.log('RootLayout segments:', segments);
-  console.log('RootLayout isAuthenticated:', isAuthenticated);
-
   const [fontsLoaded, fontError] = useFonts({
     Inter: Inter_400Regular,
     InterSemiBold: Inter_600SemiBold,

@@ -13,9 +13,7 @@
       "imageWidth": 1500,
       "resizeMode": "cover"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
@@ -38,7 +36,8 @@
           "imageWidth": 200
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-image-picker"
     ],
     "experiments": {
       "typedRoutes": true

@@ -83,13 +83,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await api.post<AuthResponse>('/auth/register', data);
-      await AsyncStorage.setItem(
-        'tokens',
-        JSON.stringify({
-          accessToken: response.data.accessToken,
-          refreshToken: response.data.refreshToken,
-        })
-      );
+      console.log(response.data, 'response.data');
+      if (response.data.success) {
+        console.log('Registration successful');
+        await AsyncStorage.setItem(
+          'tokens',
+          JSON.stringify({
+            accessToken: response.data.accessToken,
+            refreshToken: response.data.refreshToken,
+          })
+        );
+      } else {
+        throw new Error('Registration failed');
+        console.log('Registration failed');
+      }
+
       set({
         user: response.data.data.user,
         accessToken: response.data.accessToken,

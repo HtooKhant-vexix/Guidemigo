@@ -22,6 +22,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/service/auth';
 import { useHosts, usePlaces } from '@/hooks/useData';
+import { SkeletonHostCard } from '@/components/SkeletonHostCard';
 
 const PLACES = [
   {
@@ -93,9 +94,11 @@ export default function Home() {
 
   if (placesLoading || hostsLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00BCD4" />
-      </View>
+      <ScrollView style={styles.container}>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <SkeletonHostCard key={index} />
+        ))}
+      </ScrollView>
     );
   }
 

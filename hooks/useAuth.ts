@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../service/auth';
-import { router } from 'expo-router';
+import { router, useSegments } from 'expo-router';
 
 export function useAuth() {
   const {
@@ -11,6 +11,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    setup,
     clearError,
     initializeAuth,
     isAuthenticated,
@@ -42,7 +43,8 @@ export function useAuth() {
     user,
     isLoading,
     error,
-    isAuthenticated: isAuthenticated,
+    setup,
+    isAuthenticated: !!user,
     login,
     register,
     logout: handleLogout,
