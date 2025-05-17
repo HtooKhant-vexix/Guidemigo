@@ -5,9 +5,13 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft, Users } from 'lucide-react-native';
+import { useHosts, useReview } from '@/hooks/useData';
+import { SkeletonHostCard } from '@/components/SkeletonHostCard';
+import { SkeletonFeedPost } from '@/components/SkeletonFeedPost';
 
 const ALL_HOSTS = [
   {
@@ -49,6 +53,25 @@ const ALL_HOSTS = [
 ];
 
 export default function AllHosts() {
+  const { hosts, loading, error } = useHosts();
+  console.log(hosts, '......hosts');
+  if (loading) {
+    return (
+      <ScrollView style={styles.container}>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <SkeletonFeedPost key={index} />
+        ))}
+      </ScrollView>
+    );
+  }
+
+  // if (error) {
+  //   return (
+  //     <View style={styles.errorContainer}>
+  //       <Text style={styles.errorText}>{error}</Text>
+  //     </View>
+  //   );
+  // }
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -62,32 +85,41 @@ export default function AllHosts() {
       </View>
 
       <FlatList
-        data={ALL_HOSTS}
+        data={hosts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.hostCard}
-            onPress={() => router.push(`/hosts/${item.id}`)}
+            onPress={() => router.push(`/hosts/${item.profile.id}`)}
           >
-            <Image source={{ uri: item.image }} style={styles.hostImage} />
+            <Image
+              source={{
+                uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+              }}
+              style={styles.hostImage}
+            />
             <View style={styles.hostInfo}>
-              <Text style={styles.hostName}>{item.name}</Text>
+              <Text style={styles.hostName}>{item.profile.name}</Text>
               <View style={styles.hostStats}>
                 <Users size={16} color="#00BCD4" />
                 <Text style={styles.hostStatsText}>
-                  {item.travelers} Travelers
+                  {item.profile.travelers} Travelers
                 </Text>
               </View>
-              <Text style={styles.languages}>{item.languages.join(' • ')}</Text>
+              <Text style={styles.languages}>
+                {item.profile.languages.join(' • ')}
+              </Text>
               <View style={styles.specialtiesContainer}>
-                {item.specialties.map((specialty, index) => (
+                {item.profile.languages.map((specialty, index) => (
                   <View key={index} style={styles.specialtyTag}>
                     <Text style={styles.specialtyText}>{specialty}</Text>
                   </View>
                 ))}
               </View>
               <View style={styles.ratingContainer}>
-                <Text style={styles.rating}>★ {item.rating}</Text>
+                <Text style={styles.rating}>
+                  ★ {item.profile.rating ? item.profile.rating : 3}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>

@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Star, Globe, Users, Calendar } from 'lucide-react-native';
+import { useHosts, useReview } from '@/hooks/useData';
+import { useEffect } from 'react';
 
 const HOSTS = {
   '1': {
@@ -126,6 +128,20 @@ const HOSTS = {
 export default function HostDetail() {
   const { id } = useLocalSearchParams();
   const host = HOSTS[id as keyof typeof HOSTS];
+  const { loading, error, review } = useReview(Number(id));
+  const {
+    hosts,
+    host: host_data,
+    loading: hostsLoading,
+    error: hostsError,
+    handleHost,
+  } = useHosts();
+  console.log(review, 'review');
+  console.log(host_data, 'hosts deail');
+
+  useEffect(() => {
+    handleHost(id as string);
+  }, [id]);
 
   if (!host) {
     return (
@@ -148,38 +164,42 @@ export default function HostDetail() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.name}>{host.name}</Text>
+        <Text style={styles.name}>{host_data?.name}</Text>
 
         <View style={styles.statsContainer}>
           <View style={styles.stat}>
             <Star size={16} color="#FFD700" />
-            <Text style={styles.statText}>{host.rating} Rating</Text>
+            <Text style={styles.statText}>{host_data?.rating || 0} Rating</Text>
           </View>
           <View style={styles.stat}>
             <Globe size={16} color="#00BCD4" />
-            <Text style={styles.statText}>{host.languages.join(', ')}</Text>
+            <Text style={styles.statText}>
+              {host_data?.languages.join(', ')}
+            </Text>
           </View>
           <View style={styles.stat}>
             <Users size={16} color="#00BCD4" />
-            <Text style={styles.statText}>{host.travelers} Travelers</Text>
+            <Text style={styles.statText}>
+              {host_data?.travellers} Travelers
+            </Text>
           </View>
           <View style={styles.stat}>
             <Calendar size={16} color="#00BCD4" />
-            <Text style={styles.statText}>{host.experience}</Text>
+            <Text style={styles.statText}>{host_data?.experience || 0}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.bio}>{host.bio}</Text>
+          <Text style={styles.bio}>{host_data?.bio}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expertise</Text>
           <View style={styles.expertiseContainer}>
-            {host.expertise.map((item, index) => (
+            {host_data?.expertise.map((item, index) => (
               <View key={index} style={styles.expertiseItem}>
-                <Text style={styles.expertiseText}>{item}</Text>
+                <Text style={styles.expertiseText}>{item.name}</Text>
               </View>
             ))}
           </View>
@@ -187,10 +207,12 @@ export default function HostDetail() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Reviews</Text>
-          {host.reviews.map((review) => (
+          {review.map((review) => (
             <View key={review.id} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
-                <Text style={styles.reviewUser}>{review.user}</Text>
+                <Text style={styles.reviewUser}>
+                  {review.user.profile.name}
+                </Text>
                 <Text style={styles.reviewRating}>★ {review.rating}</Text>
               </View>
               <Text style={styles.reviewComment}>{review.comment}</Text>
@@ -321,7 +343,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 'auto',
   },
   bookButtonText: {
     fontSize: 16,

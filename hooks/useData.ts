@@ -9,10 +9,13 @@ import {
   likePost,
   unlikePost,
   fetchTour,
+  NewPost,
+  fetchReview,
 } from '../service/api';
 
 export function useHosts() {
   const [hosts, setHosts] = useState<Host[]>([]);
+  const [host, setHost] = useState<Host | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +36,18 @@ export function useHosts() {
     loadHosts();
   }, []);
 
-  return { hosts, loading, error };
+  const handleHost = async (id: string) => {
+    try {
+      const { data } = await fetchHost(id);
+      console.log(data, '................');
+      setHost(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load host details');
+    }
+  };
+
+  return { hosts, host, loading, error, handleHost };
 }
 
 export function useHost(id: string) {
@@ -70,7 +84,7 @@ export function usePlaces() {
     async function loadPlaces() {
       try {
         const data = await fetchPlaces();
-        setPlaces(data?.data);
+        setPlaces((data as { data: Place[] }).data);
         setError(null);
       } catch (err) {
         setError('Failed to load places');
@@ -158,9 +172,74 @@ export function usePosts() {
       console.error('Error updating like:', err);
     }
   };
+  const deletePost = async (postId: string) => {
+    try {
+      await deletePost(postId);
+      setPosts(posts.filter((post) => post.id !== postId));
+    } catch (err) {
+      console.error('Error deleting post:', err);
+    }
+  };
+  const updatePost = async (
+    postId: string,
+    postData: {
+      content: string;
+      location?: string;
+      images?: string[];
+    }
+  ) => {
+    try {
+      const updatedPost = await updatePost(postId, postData);
+      setPosts(posts.map((post) => (post.id === postId ? updatedPost : post)));
+    } catch (err) {
+      console.error('Error updating post:', err);
+    }
+  };
+  const addComment = async (postId: string, comment: string) => {
+    try {
+      const updatedPost = await addComment(postId, comment);
+      setPosts(posts.map((post) => (post.id === postId ? updatedPost : post)));
+    } catch (err) {
+      console.error('Error adding comment:', err);
+    }
+  };
+  const deleteComment = async (postId: string, commentId: string) => {
+    try {
+      const updatedPost = await deleteComment(postId, commentId);
+      setPosts(posts.map((post) => (post.id === postId ? updatedPost : post)));
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+    }
+  };
+  const updateComment = async (
+    postId: string,
+    commentId: string,
+    comment: string
+  ) => {
+    try {
+      const updatedPost = await updateComment(postId, commentId, comment);
+      setPosts(posts.map((post) => (post.id === postId ? updatedPost : post)));
+    } catch (err) {
+      console.error('Error updating comment:', err);
+    }
+  };
+  const createPost = async (postData: {
+    content: string;
+    location?: string;
+    images?: Array<Record<string, any>> | undefined;
+  }) => {
+    try {
+      const newPost = await NewPost(postData);
+      console.log(newPost, 'newPost');
+      setPosts([newPost, ...posts]);
+    } catch (err) {
+      console.error('Error creating post:', err);
+    }
+  };
 
-  return { posts, loading, error, handleLike };
+  return { posts, loading, createPost, error, handleLike };
 }
+
 export function useTours() {
   const [tours, setTours] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +263,31 @@ export function useTours() {
     loadPosts();
   }, []);
 
-
-
   return { tours, loading, error };
+}
+
+export function useReview(id: number) {
+  const [review, setReview] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPosts(id: number) {
+      try {
+        const data = await fetchReview(id);
+        // console.error('Fetched posts:', data.data[0]);
+        setReview(data.data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load posts');
+        console.error('Error loading posts:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPosts(id);
+  }, []);
+
+  return { review, loading, error };
 }

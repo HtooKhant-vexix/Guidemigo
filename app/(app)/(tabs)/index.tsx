@@ -84,13 +84,14 @@ const ads = [
 
 export default function Home() {
   const { user } = useAuthStore();
-  console.log(user, 'user');
+  // console.log(user, 'user');
 
   const { places, loading: placesLoading, error: placesError } = usePlaces();
   const { hosts, loading: hostsLoading, error: hostsError } = useHosts();
-
   console.log(hosts, 'hosts');
-  console.log(places, 'places');
+
+  // console.log(hosts, 'hosts');
+  // console.log(places, 'places');
 
   if (placesLoading || hostsLoading) {
     return (
@@ -144,7 +145,7 @@ export default function Home() {
           style={styles.roleButton}
           onPress={async () => {
             const tokens = await AsyncStorage.getItem('tokens');
-            console.log(tokens, 'tokens');
+            // console.log(tokens, 'tokens');
           }}
         >
           {/* <Image
@@ -215,13 +216,13 @@ export default function Home() {
               />
               <View style={styles.hostInfo}>
                 <View style={styles.name}>
-                  <Text style={styles.hostName}>{host.profile.name}</Text>
+                  <Text style={styles.hostName}>{host?.profile?.name}</Text>
                   <Bookmark size={23} color="#000" />
                 </View>
                 <View style={styles.hostRating}>
                   <CircleUserRound size={19} color="#00BCD4" />
                   <Text style={styles.hostDetails}>
-                    Hosted {host.profile.travelers || 13} Travelers
+                    Hosted {host?.profile.travellers || 0} Travelers
                   </Text>
                 </View>
                 <View style={styles.hostRating}>
@@ -255,10 +256,10 @@ export default function Home() {
               onPress={() => router.push(`/places/${place.id}`)}
             >
               <Image source={PLACES[0].image} style={styles.placeImage} />
-              <Text style={styles.placeName}>{place.name}</Text>
+              <Text style={styles.placeName}>{place?.name}</Text>
               <View style={styles.placeLocation}>
                 <MapPin size={16} color="#00BCD4" />
-                <Text style={styles.placeLocationText}>{place.location}</Text>
+                <Text style={styles.placeLocationText}>{place?.location}</Text>
               </View>
             </TouchableOpacity>
           ))}

@@ -193,7 +193,7 @@ export default function AccountSetup() {
   // };
 
   const handleSubmit = async () => {
-    console.log('clicked', token);
+    // console.log('clicked', token);
     const result = profileSchema.safeParse(formValues);
 
     if (!result.success) {

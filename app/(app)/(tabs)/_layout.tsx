@@ -1,3 +1,4 @@
+import { useAuth } from '@/hooks/useAuth';
 import { Tabs } from 'expo-router';
 import {
   Chrome as Home,
@@ -8,10 +9,15 @@ import {
   House,
   Heart,
   MapPin,
+  PlusCircle,
 } from 'lucide-react-native';
 import { useMemo } from 'react';
 
 export default function TabLayout() {
+  const { user } = useAuth();
+  console.log(user, 'user');
+  const isHost = user?.role?.name === 'guide';
+  console.log(isHost, 'isHost');
   const screenOptions = useMemo(
     () => ({
       headerShown: false,
@@ -55,6 +61,42 @@ export default function TabLayout() {
     []
   );
 
+  const host_tabs = useMemo(
+    () => [
+      {
+        name: 'index',
+        title: 'Home',
+        icon: House,
+      },
+      {
+        name: 'guidemigo',
+        title: 'Guides',
+        icon: User2,
+      },
+      {
+        name: 'feed',
+        title: 'Feed',
+        icon: Heart,
+      },
+      {
+        name: 'places',
+        title: 'Places',
+        icon: MapPin,
+      },
+      {
+        name: 'create-tour',
+        title: 'Create Tour',
+        icon: PlusCircle,
+      },
+      {
+        name: 'more',
+        title: 'More',
+        icon: Menu,
+      },
+    ],
+    []
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -77,18 +119,31 @@ export default function TabLayout() {
         },
       }}
     >
-      {tabs.map(({ name, title, icon: Icon }) => (
-        <Tabs.Screen
-          key={name}
-          name={name}
-          options={{
-            title,
-            tabBarIcon: ({ size, color }) => (
-              <Icon size={size + 10} color={color} />
-            ),
-          }}
-        />
-      ))}
+      {isHost
+        ? host_tabs.map(({ name, title, icon: Icon }) => (
+            <Tabs.Screen
+              key={name}
+              name={name}
+              options={{
+                title,
+                tabBarIcon: ({ size, color }) => (
+                  <Icon size={size + 10} color={color} />
+                ),
+              }}
+            />
+          ))
+        : tabs.map(({ name, title, icon: Icon }) => (
+            <Tabs.Screen
+              key={name}
+              name={name}
+              options={{
+                title,
+                tabBarIcon: ({ size, color }) => (
+                  <Icon size={size + 10} color={color} />
+                ),
+              }}
+            />
+          ))}
     </Tabs>
   );
 }

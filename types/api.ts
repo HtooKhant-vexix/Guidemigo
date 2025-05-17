@@ -52,6 +52,13 @@ export interface Post {
   isLiked: boolean;
 }
 
+export interface Review {
+  id: string;
+  user: User;
+  rating: number;
+  comment: string;
+}
+
 export interface Comment {
   id: string;
   content: string;

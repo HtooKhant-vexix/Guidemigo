@@ -171,7 +171,7 @@ export default function Feed() {
   const { posts: data, loading, error, handleLike } = usePosts();
 
   const [posts, setPosts] = useState(POSTS);
-  console.log('........', data);
+  // console.log('........', data);
 
   const toggleLike = useCallback((postId: string) => {
     setPosts((currentPosts) =>

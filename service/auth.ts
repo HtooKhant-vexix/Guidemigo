@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       //   headers: { Authorization: `Bearer ${tokens.accessToken}` },
       // });
 
-      console.log('init..............................');
+      // console.log('init..............................');
 
       const response = await api.post(
         '/auth/refresh-token',
@@ -71,10 +71,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
       );
 
-      console.log(
-        response.data.data.user,
-        'response...........................'
-      );
+      // console.log(
+      //   response.data.data.user,
+      //   'response...........................'
+      // );
 
       set({
         user: response.data.data.user,
@@ -152,12 +152,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   setup: async (data, token) => {
     try {
       set({ isLoading: true, error: null });
-      console.log(
-        Number(data.id),
-        token,
-        `/user/profile/update?id=${Number(data.id)}`,
-        'data.....gg......................'
-      );
+      // console.log(
+      //   Number(data.id),
+      //   token,
+      //   `/user/profile/update?id=${Number(data.id)}`,
+      //   'data.....gg......................'
+      // );
 
       const formData = new FormData();
       formData.append('id', data.id);
@@ -177,7 +177,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         formData.append('expertise[]', expertise)
       );
 
-      console.log('FormData:', formData);
+      // console.log('FormData:', formData);
 
       const response = await axios.patch(
         `/user/profile/update?id=${Number(data.id)}`,
@@ -191,7 +191,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           },
         }
       );
-      console.log(response, 'response...........................');
+      // console.log(response, 'response...........................');
 
       await AsyncStorage.setItem(
         'tokens',
@@ -214,7 +214,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: error instanceof Error ? error.message : 'Failed to register',
         isLoading: false,
       });
-      console.log(error, 'error...........................');
+      // console.log(error, 'error...........................');
       throw error;
     }
   },
@@ -271,7 +271,7 @@ api.interceptors.response.use(
         }
 
         const newTokens = await refreshPromise;
-        console.log(newTokens, '.......................................');
+        // console.log(newTokens, '.......................................');
         await AsyncStorage.setItem('tokens', JSON.stringify(newTokens));
 
         originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
