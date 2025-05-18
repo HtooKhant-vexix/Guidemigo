@@ -75,7 +75,7 @@ export default function Guidemigo() {
   const { hosts, loading: userLoading, error: userErr } = useHosts();
   const { tours, loading, error } = useTours();
   // console.log(hosts, '......hosts');
-  // console.log(tours, '......tours');
+  console.log(tours[0]?.host.profile, '......tours');
 
   if (loading) {
     return (
@@ -119,7 +119,7 @@ export default function Guidemigo() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Upcoming Tours</Text>
-        {UPCOMING_TOURS.map((tour) => (
+        {tours.map((tour) => (
           <TouchableOpacity
             key={tour.id}
             style={styles.upcomingTourCard}
@@ -127,35 +127,45 @@ export default function Guidemigo() {
           >
             <View style={styles.tourHeader}>
               <View>
-                <Text style={styles.tourName}>{tour.name}</Text>
+                <Text style={styles.tourName}>{tour.title}</Text>
                 <View style={styles.locationContainer}>
                   <MapPin size={16} color="#00BCD4" />
-                  <Text style={styles.locationText}>{tour.location}</Text>
+                  <Text style={styles.locationText}>{tour.location.name}</Text>
                 </View>
               </View>
               <View style={styles.dateContainer}>
                 <Calendar size={16} color="#00BCD4" />
-                <Text style={styles.dateText}>{tour.date}</Text>
-                <Text style={styles.timeText}>{tour.time}</Text>
+                <Text style={styles.dateText}>
+                  {tour?.startTime?.slice(0, 10)}
+                </Text>
+                <Text style={styles.timeText}>
+                  {tour?.startTime?.slice(11, 16)}
+                </Text>
               </View>
             </View>
 
             <View style={styles.tourGuide}>
               <Image
-                source={{ uri: tour.guide.image }}
+                source={{
+                  uri: tour.host.profile.image
+                    ? tour.host.profile.image
+                    : 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                }}
                 style={styles.guideImage}
               />
               <View style={styles.guideInfo}>
-                <Text style={styles.guideName}>{tour.guide.name}</Text>
+                <Text style={styles.guideName}>{tour.host.profile.name}</Text>
                 <View style={styles.guideStats}>
                   <Star size={16} color="#FFD700" />
-                  <Text style={styles.ratingText}>{tour.guide.rating}</Text>
+                  <Text style={styles.ratingText}>
+                    {tour.host.profile.rating || 0}
+                  </Text>
                 </View>
               </View>
               <View style={styles.participantsContainer}>
                 <Users size={16} color="#00BCD4" />
                 <Text style={styles.participantsText}>
-                  {tour.participants} joined
+                  {tour._count.booking} joined
                 </Text>
               </View>
             </View>
@@ -170,28 +180,33 @@ export default function Guidemigo() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recommendedContainer}
         >
-          {RECOMMENDED_TOURS.map((tour) => (
+          {tours.map((tour) => (
             <TouchableOpacity
               key={tour.id}
               style={styles.recommendedCard}
               onPress={() => router.push(`/tours/${tour.id}`)}
             >
               <Image
-                source={{ uri: tour.image }}
+                source={{
+                  uri: tour.host.profile.image
+                    ? tour.host.profile.image
+                    : 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                }}
                 style={styles.recommendedImage}
               />
               <View style={styles.recommendedContent}>
-                <Text style={styles.recommendedName}>{tour.name}</Text>
+                <Text style={styles.recommendedName}>{tour.title}</Text>
                 <Text style={styles.recommendedPrice}>${tour.price}</Text>
                 <View style={styles.recommendedStats}>
                   <View style={styles.stat}>
                     <Calendar size={14} color="#666" />
-                    <Text style={styles.statText}>{tour.duration}</Text>
+                    <Text style={styles.statText}>2:00</Text>
                   </View>
                   <View style={styles.stat}>
                     <Star size={14} color="#FFD700" />
                     <Text style={styles.statText}>
-                      {tour.rating} ({tour.reviews})
+                      {tour.host.profile.rating || 0}
+                      {/* ({tour.reviews}) */}
                     </Text>
                   </View>
                 </View>

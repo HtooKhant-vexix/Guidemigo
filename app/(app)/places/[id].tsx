@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, MapPin, Star, Clock, Users } from 'lucide-react-native';
+import { usePlace, usePlaces } from '@/hooks/useData';
 
 const PLACES = {
   '1': {
@@ -117,8 +118,15 @@ const PLACES = {
 export default function PlaceDetail() {
   const { id } = useLocalSearchParams();
   const place = PLACES[id as keyof typeof PLACES];
+  const {
+    place: place_data,
+    loading: placesLoading,
+    error: placesError,
+  } = usePlace(Number(id));
 
-  if (!place) {
+  console.log(place_data, 'this is placedsdsd');
+
+  if (!place_data) {
     return (
       <View style={styles.container}>
         <Text>Place not found</Text>
@@ -129,7 +137,7 @@ export default function PlaceDetail() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Image source={place.image} style={styles.image} />
+        <Image source={{ uri: place_data.image }} style={styles.image} />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -139,14 +147,14 @@ export default function PlaceDetail() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>{place.name}</Text>
+        <Text style={styles.title}>{place_data?.name}</Text>
 
         <View style={styles.locationContainer}>
           <MapPin size={16} color="#00BCD4" />
-          <Text style={styles.location}>{place.location}</Text>
+          <Text style={styles.location}>{place_data.address}</Text>
         </View>
 
-        <View style={styles.statsContainer}>
+        {/* <View style={styles.statsContainer}>
           <View style={styles.stat}>
             <Star size={16} color="#FFD700" />
             <Text style={styles.statText}>{place.rating}</Text>
@@ -159,11 +167,11 @@ export default function PlaceDetail() {
             <Users size={16} color="#00BCD4" />
             <Text style={styles.statText}>{place.groupSize}</Text>
           </View>
-        </View>
+        </View> */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.description}>{place.description}</Text>
+          <Text style={styles.description}>{place_data?.description}</Text>
         </View>
 
         <View style={styles.section}>

@@ -11,6 +11,7 @@ import {
   fetchTour,
   NewPost,
   fetchReview,
+  fetchTours,
 } from '../service/api';
 
 export function useHosts() {
@@ -36,21 +37,10 @@ export function useHosts() {
     loadHosts();
   }, []);
 
-  const handleHost = async (id: string) => {
-    try {
-      const { data } = await fetchHost(id);
-      console.log(data, '................');
-      setHost(data);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load host details');
-    }
-  };
-
-  return { hosts, host, loading, error, handleHost };
+  return { hosts, host, loading, error };
 }
 
-export function useHost(id: string) {
+export function useHost(id: number) {
   const [host, setHost] = useState<Host | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +48,7 @@ export function useHost(id: string) {
   useEffect(() => {
     async function loadHost() {
       try {
-        const data = await fetchHost(id);
+        const { data } = await fetchHost(id);
         setHost(data);
         setError(null);
       } catch (err) {
@@ -100,7 +90,7 @@ export function usePlaces() {
   return { places, loading, error };
 }
 
-export function usePlace(id: string) {
+export function usePlace(id: number) {
   const [place, setPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +98,7 @@ export function usePlace(id: string) {
   useEffect(() => {
     async function loadPlace() {
       try {
-        const data = await fetchPlace(id);
+        const { data } = await fetchPlace(id);
         setPlace(data);
         setError(null);
       } catch (err) {
@@ -248,7 +238,7 @@ export function useTours() {
   useEffect(() => {
     async function loadPosts() {
       try {
-        const data = await fetchTour();
+        const data = await fetchTours();
         // console.error('Fetched posts:', data.data[0]);
         setTours(data.data);
         setError(null);
@@ -264,6 +254,33 @@ export function useTours() {
   }, []);
 
   return { tours, loading, error };
+}
+export function useTour(id: number) {
+  const [tour, setTour] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        console.log('load');
+        const data = await fetchTour(id);
+        console.log(data.data, 'thiioshofhaoihfo');
+        // console.error('Fetched posts:', data.data[0]);
+        setTour(data.data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load posts');
+        console.error('Error loading posts:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPosts();
+  }, []);
+
+  return { tour, loading, error };
 }
 
 export function useReview(id: number) {

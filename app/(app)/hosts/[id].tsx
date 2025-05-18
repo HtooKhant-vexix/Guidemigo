@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Star, Globe, Users, Calendar } from 'lucide-react-native';
-import { useHosts, useReview } from '@/hooks/useData';
+import { useHost, useHosts, useReview } from '@/hooks/useData';
 import { useEffect } from 'react';
 
 const HOSTS = {
@@ -130,18 +130,10 @@ export default function HostDetail() {
   const host = HOSTS[id as keyof typeof HOSTS];
   const { loading, error, review } = useReview(Number(id));
   const {
-    hosts,
-    host: host_data,
-    loading: hostsLoading,
-    error: hostsError,
-    handleHost,
-  } = useHosts();
-  console.log(review, 'review');
-  console.log(host_data, 'hosts deail');
-
-  useEffect(() => {
-    handleHost(id as string);
-  }, [id]);
+    host: single_host,
+    loading: single_loading,
+    error: single_err,
+  } = useHost(Number(id));
 
   if (!host) {
     return (
@@ -164,40 +156,42 @@ export default function HostDetail() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.name}>{host_data?.name}</Text>
+        <Text style={styles.name}>{single_host?.name}</Text>
 
         <View style={styles.statsContainer}>
           <View style={styles.stat}>
             <Star size={16} color="#FFD700" />
-            <Text style={styles.statText}>{host_data?.rating || 0} Rating</Text>
+            <Text style={styles.statText}>
+              {single_host?.rating || 0} Rating
+            </Text>
           </View>
           <View style={styles.stat}>
             <Globe size={16} color="#00BCD4" />
             <Text style={styles.statText}>
-              {host_data?.languages.join(', ')}
+              {single_host?.languages.join(', ')}
             </Text>
           </View>
           <View style={styles.stat}>
             <Users size={16} color="#00BCD4" />
             <Text style={styles.statText}>
-              {host_data?.travellers} Travelers
+              {single_host?.travellers} Travelers
             </Text>
           </View>
           <View style={styles.stat}>
             <Calendar size={16} color="#00BCD4" />
-            <Text style={styles.statText}>{host_data?.experience || 0}</Text>
+            <Text style={styles.statText}>{single_host?.experience || 0}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.bio}>{host_data?.bio}</Text>
+          <Text style={styles.bio}>{single_host?.bio}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expertise</Text>
           <View style={styles.expertiseContainer}>
-            {host_data?.expertise.map((item, index) => (
+            {single_host?.expertise.map((item, index) => (
               <View key={index} style={styles.expertiseItem}>
                 <Text style={styles.expertiseText}>{item.name}</Text>
               </View>

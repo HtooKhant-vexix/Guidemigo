@@ -88,7 +88,7 @@ export default function Home() {
 
   const { places, loading: placesLoading, error: placesError } = usePlaces();
   const { hosts, loading: hostsLoading, error: hostsError } = useHosts();
-  console.log(hosts, 'hosts');
+  console.log(places, 'hosts');
 
   // console.log(hosts, 'hosts');
   // console.log(places, 'places');
@@ -255,11 +255,11 @@ export default function Home() {
               style={styles.placeCard}
               onPress={() => router.push(`/places/${place.id}`)}
             >
-              <Image source={PLACES[0].image} style={styles.placeImage} />
+              <Image source={{ uri: place.image }} style={styles.placeImage} />
               <Text style={styles.placeName}>{place?.name}</Text>
               <View style={styles.placeLocation}>
                 <MapPin size={16} color="#00BCD4" />
-                <Text style={styles.placeLocationText}>{place?.location}</Text>
+                <Text style={styles.placeLocationText}>{place?.address}</Text>
               </View>
             </TouchableOpacity>
           ))}

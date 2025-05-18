@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { MapPin, ArrowLeft } from 'lucide-react-native';
+import { usePlaces } from '@/hooks/useData';
 
 const ALL_PLACES = [
   {
@@ -55,6 +56,8 @@ const ALL_PLACES = [
 ];
 
 export default function AllPlaces() {
+  const { places, loading, error } = usePlaces();
+  console.log(places[0].image, '......hosts');
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -68,23 +71,23 @@ export default function AllPlaces() {
       </View>
 
       <FlatList
-        data={ALL_PLACES}
+        data={places}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.placeCard}
             onPress={() => router.push(`/places/${item.id}`)}
           >
-            <Image source={item.image} style={styles.placeImage} />
+            <Image source={{ uri: item.image }} style={styles.placeImage} />
             <View style={styles.placeInfo}>
               <Text style={styles.placeName}>{item.name}</Text>
               <View style={styles.placeLocation}>
                 <MapPin size={16} color="#00BCD4" />
-                <Text style={styles.placeLocationText}>{item.location}</Text>
+                <Text style={styles.placeLocationText}>{item.address}</Text>
               </View>
-              <View style={styles.ratingContainer}>
+              {/* <View style={styles.ratingContainer}>
                 <Text style={styles.rating}>★ {item.rating}</Text>
-              </View>
+              </View> */}
             </View>
           </TouchableOpacity>
         )}

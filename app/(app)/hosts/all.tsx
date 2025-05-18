@@ -54,7 +54,6 @@ const ALL_HOSTS = [
 
 export default function AllHosts() {
   const { hosts, loading, error } = useHosts();
-  console.log(hosts, '......hosts');
   if (loading) {
     return (
       <ScrollView style={styles.container}>

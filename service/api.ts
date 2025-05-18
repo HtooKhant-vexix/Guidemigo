@@ -135,7 +135,7 @@ export const fetchPlaces = async () => {
 };
 
 export const fetchPlace = async (id: string) => {
-  const { data } = await api.get(`/places/${id}`);
+  const { data } = await api.get(`/location/${id}`);
   return data;
 };
 
@@ -187,8 +187,12 @@ export const updateComment = async (
   return data;
 };
 
-export const fetchTour = async () => {
+export const fetchTours = async () => {
   const { data } = await api.get('/tour');
+  return data;
+};
+export const fetchTour = async (id: number) => {
+  const { data } = await api.get(`/tour/${id}`);
   return data;
 };
 
