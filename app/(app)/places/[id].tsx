@@ -5,10 +5,20 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, MapPin, Star, Clock, Users } from 'lucide-react-native';
-import { usePlace, usePlaces } from '@/hooks/useData';
+import {
+  ArrowLeft,
+  MapPin,
+  Star,
+  Clock,
+  Users,
+  X,
+  Calendar,
+} from 'lucide-react-native';
+import { usePlace, usePlaces, useTours } from '@/hooks/useData';
+import { useState } from 'react';
 
 const PLACES = {
   '1': {
@@ -123,8 +133,12 @@ export default function PlaceDetail() {
     loading: placesLoading,
     error: placesError,
   } = usePlace(Number(id));
+  const { tours } = useTours();
+  const [showToursModal, setShowToursModal] = useState(false);
 
-  console.log(place_data, 'this is placedsdsd');
+  const placeTours = tours.filter(
+    (tour) => place_data && tour.location?.name === place_data.name
+  );
 
   if (!place_data) {
     return (
@@ -134,10 +148,73 @@ export default function PlaceDetail() {
     );
   }
 
+  const renderToursModal = () => (
+    <Modal
+      visible={showToursModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowToursModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Available Tours</Text>
+            <TouchableOpacity onPress={() => setShowToursModal(false)}>
+              <X size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.toursList}>
+            {placeTours.map((tour) => (
+              <TouchableOpacity
+                key={tour.id}
+                style={styles.tourCard}
+                onPress={() => {
+                  setShowToursModal(false);
+                  router.push(`/tours/${tour.id}`);
+                }}
+              >
+                <Image
+                  source={{
+                    uri: 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                  }}
+                  style={styles.tourImage}
+                />
+                <View style={styles.tourInfo}>
+                  <Text style={styles.tourName}>{tour.title}</Text>
+                  <View style={styles.tourDetails}>
+                    <Calendar size={16} color="#00BCD4" />
+                    <Text style={styles.tourDate}>
+                      {tour.startTime?.slice(0, 10)}
+                    </Text>
+                  </View>
+                  <View style={styles.tourDetails}>
+                    <Users size={16} color="#00BCD4" />
+                    <Text style={styles.tourLocation}>
+                      Host: {tour.host?.profile.name || 'No host'}
+                    </Text>
+                  </View>
+                  <Text style={styles.tourPrice}>${tour.price}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: place_data.image }} style={styles.image} />
+        <Image
+          source={{
+            uri:
+              place_data.image ||
+              'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+          }}
+          style={styles.image}
+        />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -154,20 +231,24 @@ export default function PlaceDetail() {
           <Text style={styles.location}>{place_data.address}</Text>
         </View>
 
-        {/* <View style={styles.statsContainer}>
+        <View style={styles.statsContainer}>
           <View style={styles.stat}>
             <Star size={16} color="#FFD700" />
-            <Text style={styles.statText}>{place.rating}</Text>
+            <Text style={styles.statText}>{place_data.rating || 0} Rating</Text>
           </View>
           <View style={styles.stat}>
             <Clock size={16} color="#00BCD4" />
-            <Text style={styles.statText}>{place.duration}</Text>
+            <Text style={styles.statText}>
+              {place_data.duration || '2-3 hours'}
+            </Text>
           </View>
           <View style={styles.stat}>
             <Users size={16} color="#00BCD4" />
-            <Text style={styles.statText}>{place.groupSize}</Text>
+            <Text style={styles.statText}>
+              {place_data.group_size || '1-10 people'}
+            </Text>
           </View>
-        </View> */}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
@@ -176,7 +257,7 @@ export default function PlaceDetail() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Highlights</Text>
-          {place.highlights.map((highlight, index) => (
+          {place_data.highlights?.map((highlight, index) => (
             <View key={index} style={styles.highlightItem}>
               <View style={styles.bullet} />
               <Text style={styles.highlightText}>{highlight}</Text>
@@ -184,10 +265,15 @@ export default function PlaceDetail() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.bookButton}>
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={() => setShowToursModal(true)}
+        >
           <Text style={styles.bookButtonText}>Book Now</Text>
         </TouchableOpacity>
       </View>
+
+      {renderToursModal()}
     </ScrollView>
   );
 }
@@ -298,5 +384,74 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'InterSemiBold',
     color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'InterBold',
+    color: '#000',
+  },
+  toursList: {
+    marginTop: 16,
+  },
+  tourCard: {
+    flexDirection: 'row',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  tourImage: {
+    width: 120,
+    height: 120,
+  },
+  tourInfo: {
+    flex: 1,
+    padding: 12,
+  },
+  tourName: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  tourDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  tourDate: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  tourLocation: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  tourPrice: {
+    fontSize: 18,
+    fontFamily: 'InterBold',
+    color: '#00BCD4',
+    marginTop: 8,
   },
 });
