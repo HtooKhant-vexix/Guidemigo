@@ -19,71 +19,14 @@ import {
   Search,
 } from 'lucide-react-native';
 import { useState, useEffect, useRef } from 'react';
+import { useTours } from '@/hooks/useData';
+import { Post } from '@/types/api';
 
-interface Booking {
-  id: string;
-  tourName: string;
-  date: string;
-  time: string;
-  location: string;
-  status: 'upcoming' | 'completed';
-  image: string;
-  price: number;
-  participants: number;
-  guide: {
-    name: string;
-    image: string;
-  };
+type BookingStatus = 'upcoming' | 'completed';
+
+interface Booking extends Post {
+  status: BookingStatus;
 }
-
-// Mock data for bookings
-const MOCK_BOOKINGS: Booking[] = [
-  {
-    id: '1',
-    tourName: 'Cultural Heritage Tour',
-    date: '2024-03-15',
-    time: '09:00',
-    location: 'Chinatown, Singapore',
-    status: 'upcoming',
-    image: 'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
-    price: 75,
-    participants: 2,
-    guide: {
-      name: 'Venkatesh',
-      image: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6',
-    },
-  },
-  {
-    id: '2',
-    tourName: 'Modern Architecture Tour',
-    date: '2024-03-20',
-    time: '14:00',
-    location: 'Marina Bay, Singapore',
-    status: 'upcoming',
-    image: 'https://images.pexels.com/photos/1538177/pexels-photo-1538177.jpeg',
-    price: 89,
-    participants: 1,
-    guide: {
-      name: 'Lokesh',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-    },
-  },
-  {
-    id: '3',
-    tourName: 'Food Tour',
-    date: '2024-02-28',
-    time: '11:00',
-    location: 'Little India, Singapore',
-    status: 'completed',
-    image: 'https://images.pexels.com/photos/4101555/pexels-photo-4101555.jpeg',
-    price: 65,
-    participants: 3,
-    guide: {
-      name: 'Priya',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
-    },
-  },
-];
 
 const SkeletonBookingCard = () => {
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -167,50 +110,116 @@ const SkeletonBookingCard = () => {
 };
 
 export default function Bookings() {
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<BookingStatus | 'all'>(
+    'all'
+  );
+  const { tours, loading, error } = useTours();
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const filteredBookings = MOCK_BOOKINGS.filter((booking) => {
-    if (activeFilter === 'all') return true;
-    return booking.status === activeFilter;
-  });
+  const filteredBookings = tours
+    .map((tour) => ({
+      ...tour,
+      status: (new Date(tour.startTime) > new Date()
+        ? 'upcoming'
+        : 'completed') as BookingStatus,
+    }))
+    .filter((booking) => {
+      if (activeFilter === 'all') return true;
+      return booking.status === activeFilter;
+    });
 
   const renderBookingCard = (booking: Booking) => (
     <TouchableOpacity
       key={booking.id}
-      style={styles.bookingCard}
-      onPress={() => router.push(`/tours/${booking.id}`)}
+      style={[
+        styles.bookingCard,
+        booking.status === 'upcoming' && styles.upcomingCard,
+        booking.status === 'completed' && styles.completedCard,
+      ]}
+      onPress={() => {
+        if (booking.status === 'completed') return;
+        router.push(`/tours/${booking.id}`);
+      }}
     >
-      <Image source={{ uri: booking.image }} style={styles.bookingImage} />
+      <Image
+        source={{
+          uri:
+            booking.images?.[0] ||
+            'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
+        }}
+        style={[
+          styles.bookingImage,
+          booking.status === 'completed' && styles.completedImage,
+        ]}
+      />
       <View style={styles.bookingContent}>
-        <Text style={styles.tourName}>{booking.tourName}</Text>
+        <Text
+          style={[
+            styles.tourName,
+            booking.status === 'completed' && styles.completedText,
+          ]}
+        >
+          {booking.title}
+        </Text>
 
         <View style={styles.bookingDetails}>
           <View style={styles.detailRow}>
-            <Calendar size={16} color="#00BCD4" />
-            <Text style={styles.detailText}>{booking.date}</Text>
-            <Clock size={16} color="#00BCD4" style={styles.detailIcon} />
-            <Text style={styles.detailText}>{booking.time}</Text>
+            <Calendar
+              size={16}
+              color={booking.status === 'completed' ? 'gray' : '#00BCD4'}
+            />
+            <Text
+              style={[
+                styles.detailText,
+                booking.status === 'completed' && styles.completedText,
+              ]}
+            >
+              {new Date(booking.startTime).toLocaleDateString()}
+            </Text>
+            <Clock
+              size={16}
+              color={booking.status === 'completed' ? 'gray' : '#00BCD4'}
+              style={styles.detailIcon}
+            />
+            <Text
+              style={[
+                styles.detailText,
+                booking.status === 'completed' && styles.completedText,
+              ]}
+            >
+              {new Date(booking.startTime).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <MapPin size={16} color="#00BCD4" />
-            <Text style={styles.detailText}>{booking.location}</Text>
+            <MapPin
+              size={16}
+              color={booking.status === 'completed' ? 'gray' : '#00BCD4'}
+            />
+            <Text
+              style={[
+                styles.detailText,
+                booking.status === 'completed' && styles.completedText,
+              ]}
+            >
+              {booking.location?.name}
+            </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Users size={16} color="#00BCD4" />
-            <Text style={styles.detailText}>
-              {booking.participants} participants
+            <Users
+              size={16}
+              color={booking.status === 'completed' ? 'gray' : '#00BCD4'}
+            />
+            <Text
+              style={[
+                styles.detailText,
+                booking.status === 'completed' && styles.completedText,
+              ]}
+            >
+              {booking._count.booking} Participants
             </Text>
           </View>
         </View>
@@ -218,15 +227,37 @@ export default function Bookings() {
         <View style={styles.bookingFooter}>
           <View style={styles.guideInfo}>
             <Image
-              source={{ uri: booking.guide.image }}
-              style={styles.guideImage}
+              source={{ uri: booking.host?.profile.image }}
+              style={[
+                styles.guideAvatar,
+                booking.status === 'completed' && styles.completedImage,
+              ]}
             />
-            <Text style={styles.guideName}>{booking.guide.name}</Text>
+            <Text
+              style={[
+                styles.guideName,
+                booking.status === 'completed' && styles.completedText,
+              ]}
+            >
+              {booking.host?.profile.name}
+            </Text>
           </View>
           <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Total</Text>
-            <Text style={styles.price}>
-              ${booking.price * booking.participants}
+            <Text
+              style={[
+                styles.priceLabel,
+                booking.status === 'completed' && styles.completedText,
+              ]}
+            >
+              Price
+            </Text>
+            <Text
+              style={[
+                styles.price,
+                booking.status === 'completed' && styles.completedPrice,
+              ]}
+            >
+              ${booking.price}
             </Text>
           </View>
         </View>
@@ -234,12 +265,20 @@ export default function Bookings() {
         <View
           style={[
             styles.statusBadge,
-            booking.status === 'upcoming'
-              ? styles.upcomingBadge
-              : styles.completedBadge,
+            {
+              backgroundColor:
+                booking.status === 'upcoming' ? '#E3F2FD' : '#F5F5F5',
+            },
           ]}
         >
-          <Text style={styles.statusText}>
+          <Text
+            style={[
+              styles.statusText,
+              {
+                color: booking.status === 'upcoming' ? '#1976D2' : 'gray',
+              },
+            ]}
+          >
             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
           </Text>
         </View>
@@ -247,61 +286,99 @@ export default function Bookings() {
     </TouchableOpacity>
   );
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.title}>My Bookings</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Filter size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterScroll}
-        >
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Booking History</Text>
+        </View>
+        <View style={styles.filterContainer}>
           {['all', 'upcoming', 'completed'].map((filter) => (
             <TouchableOpacity
               key={filter}
               style={[
-                styles.filterChip,
-                activeFilter === filter && styles.activeFilterChip,
+                styles.filterButton,
+                activeFilter === filter && styles.activeFilterButton,
               ]}
-              onPress={() => setActiveFilter(filter)}
+              onPress={() => setActiveFilter(filter as BookingStatus)}
             >
               <Text
                 style={[
-                  styles.filterChipText,
-                  activeFilter === filter && styles.activeFilterChipText,
+                  styles.filterText,
+                  activeFilter === filter && styles.activeFilterText,
                 ]}
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
+        {[1, 2, 3].map((_, index) => (
+          <SkeletonBookingCard key={index} />
+        ))}
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Booking History</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Failed to load bookings</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => window.location.reload()}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Booking History</Text>
       </View>
 
-      {loading ? (
-        <ScrollView style={styles.bookingsList}>
-          {[1, 2, 3].map((_, index) => (
-            <SkeletonBookingCard key={index} />
+      <View style={styles.filterContainer}>
+        <View style={styles.filterButtons}>
+          {['all', 'upcoming', 'completed'].map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[
+                styles.filterButton,
+                activeFilter === filter && styles.activeFilterButton,
+              ]}
+              onPress={() => setActiveFilter(filter as BookingStatus)}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  activeFilter === filter && styles.activeFilterText,
+                ]}
+              >
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </Text>
+            </TouchableOpacity>
           ))}
-        </ScrollView>
-      ) : (
-        <ScrollView style={styles.bookingsList}>
-          {filteredBookings.map(renderBookingCard)}
-        </ScrollView>
-      )}
-    </View>
+        </View>
+      </View>
+
+      <View style={styles.bookingsContainer}>
+        {filteredBookings.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No bookings found</Text>
+          </View>
+        ) : (
+          filteredBookings.map(renderBookingCard)
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -320,96 +397,94 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
+  headerTitle: {
+    fontSize: 24,
     fontFamily: 'InterBold',
     color: '#000',
   },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   filterContainer: {
     paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  filterScroll: {
-    paddingHorizontal: 16,
+  filterButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
   },
-  filterChip: {
-    paddingHorizontal: 16,
+  filterButton: {
+    paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#f5f5f5',
-    marginRight: 8,
+    minWidth: 100,
+    alignItems: 'center',
   },
-  activeFilterChip: {
+  activeFilterButton: {
     backgroundColor: '#00BCD4',
   },
-  filterChipText: {
+  filterText: {
     fontSize: 14,
     fontFamily: 'InterSemiBold',
     color: '#666',
   },
-  activeFilterChipText: {
+  activeFilterText: {
     color: '#fff',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bookingsList: {
-    flex: 1,
+  bookingsContainer: {
     padding: 16,
   },
   bookingCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: 16,
+    marginBottom: 20,
     overflow: 'hidden',
+    borderWidth: 0,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  upcomingCard: {
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#00BCD4',
   },
   bookingImage: {
     width: '100%',
-    height: 160,
+    height: 180,
+  },
+  completedImage: {
+    opacity: 1,
   },
   bookingContent: {
-    padding: 16,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
   },
   tourName: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'InterSemiBold',
     color: '#000',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  completedText: {
+    color: 'gray',
   },
   bookingDetails: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   detailIcon: {
     marginLeft: 16,
   },
   detailText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter',
     color: '#666',
     marginLeft: 8,
@@ -418,22 +493,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 16,
+    paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#E0E0E0',
+    marginTop: 16,
   },
   guideInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  guideImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 8,
+  guideAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
   },
   guideName: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'InterSemiBold',
     color: '#000',
   },
@@ -441,34 +517,32 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   priceLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Inter',
     color: '#666',
     marginBottom: 4,
   },
   price: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'InterBold',
     color: '#00BCD4',
   },
+  completedPrice: {
+    color: 'gray',
+  },
   statusBadge: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    top: 20,
+    right: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 12,
-  },
-  upcomingBadge: {
-    backgroundColor: '#E3F2FD',
-  },
-  completedBadge: {
-    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'InterSemiBold',
-    color: '#00BCD4',
   },
   skeletonTitle: {
     height: 24,
@@ -510,5 +584,40 @@ const styles = StyleSheet.create({
     height: 24,
     backgroundColor: '#E0E0E0',
     borderRadius: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#00BCD4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  completedCard: {
+    backgroundColor: '#EEEEEE',
   },
 });
