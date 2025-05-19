@@ -141,7 +141,7 @@ export const fetchPlace = async (id: string) => {
 
 // Posts API
 export const fetchPosts = async () => {
-  const { data } = await api.get('/activity');
+  const { data } = await api.get('/activity/recent/desc');
   return data;
 };
 

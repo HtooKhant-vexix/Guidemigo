@@ -80,16 +80,66 @@ const POSTS = [
   },
 ];
 
-const PostHeader = memo(({ user, location }) => (
+interface PostProps {
+  post: {
+    id: string;
+    content: string;
+    name: string;
+    avatar: string;
+    isVerified?: boolean;
+  };
+  onLike: (postId: string) => void;
+}
+
+interface PostHeaderProps {
+  user: {
+    name: string;
+    avatar: string;
+    isVerified?: boolean;
+  };
+  location: string;
+}
+
+interface PostContentProps {
+  content: string;
+  images: string;
+  onPress: () => void;
+}
+
+interface PostActionsProps {
+  post: any;
+  onLike: (postId: string) => void;
+}
+
+interface StoryProps {
+  story: {
+    id: string;
+    user: {
+      name: string;
+      avatar: string;
+      isVerified: boolean;
+    };
+  };
+  onPress: () => void;
+}
+
+const PostHeader = memo(({ user, location }: PostHeaderProps) => (
   <View style={styles.postHeader}>
     <TouchableOpacity
       style={styles.userInfo}
       onPress={() => router.push(`/profile/${user.name}`)}
     >
-      <Image source={{ uri: user.avatar }} style={styles.avatar} />
+      <Image
+        source={{
+          uri: user.author.profile.image
+            ? user.author.profile.image
+            : 'https://images.pexels.com/photos/2187605/pexels-photo-2187605.jpeg',
+        }}
+        style={styles.avatar}
+      />
       <View>
         <View style={styles.nameContainer}>
-          <Text style={styles.userName}>{user.name}</Text>
+          <Text style={styles.userName}>{user.author.profile.name}</Text>
           {user.isVerified && (
             <View style={styles.verifiedBadge}>
               <Text style={styles.verifiedText}>✓</Text>
@@ -108,17 +158,17 @@ const PostHeader = memo(({ user, location }) => (
   </View>
 ));
 
-const PostContent = memo(({ content, images, onPress }) => (
+const PostContent = memo(({ content, images, onPress }: PostContentProps) => (
   <TouchableOpacity onPress={onPress} style={styles.postContent}>
     <Text style={styles.postText}>{content}</Text>
     <Image source={{ uri: images }} style={styles.postImage} />
   </TouchableOpacity>
 ));
 
-const PostActions = memo(({ post, onLike }) => (
+const PostActions = memo(({ post, onLike }: PostActionsProps) => (
   <View style={styles.postActions}>
     <View style={styles.leftActions}>
-      {/* <TouchableOpacity
+      <TouchableOpacity
         style={styles.actionButton}
         onPress={() => onLike(post.id)}
       >
@@ -127,15 +177,15 @@ const PostActions = memo(({ post, onLike }) => (
           color={post.isLiked ? '#FF4444' : '#666'}
           fill={post.isLiked ? '#FF4444' : 'transparent'}
         />
-        <Text style={styles.actionText}>{post.likes}</Text>
+        <Text style={styles.actionText}>{post.like || 0}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.actionButton}
         onPress={() => router.push(`/feed/post/${post.id}#comments`)}
       >
         <MessageCircle size={24} color="#666" />
-        <Text style={styles.actionText}>{post.comments}</Text>
-      </TouchableOpacity> */}
+        <Text style={styles.actionText}>{post.comments || 0}</Text>
+      </TouchableOpacity>
     </View>
     <TouchableOpacity style={styles.actionButton}>
       <Share2 size={24} color="#666" />
@@ -143,13 +193,13 @@ const PostActions = memo(({ post, onLike }) => (
   </View>
 ));
 
-const Post = memo(({ post, onLike }) => (
+const Post = memo(({ post, onLike }: PostProps) => (
   <View style={styles.post}>
-    <PostHeader user={post.author} location={'singapore'} />
+    <PostHeader user={post} location={'singapore'} />
     <PostContent
       content={post.content}
       images={'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6'}
-      onPress={() => router.push(`/feed/post/${post.id}`)}
+      onPress={() => router.push('/feed/post/' + post.id)}
     />
     <PostActions post={post} onLike={onLike} />
     <View style={styles.postFooter}>
@@ -158,7 +208,7 @@ const Post = memo(({ post, onLike }) => (
   </View>
 ));
 
-const Story = memo(({ story, onPress }) => (
+const Story = memo(({ story, onPress }: StoryProps) => (
   <TouchableOpacity style={styles.storyButton} onPress={onPress}>
     <Image source={{ uri: story.user.avatar }} style={styles.storyAvatar} />
     <Text style={styles.storyName} numberOfLines={1}>
@@ -171,7 +221,7 @@ export default function Feed() {
   const { posts: data, loading, error, handleLike } = usePosts();
 
   const [posts, setPosts] = useState(POSTS);
-  // console.log('........', data);
+  // console.log('........', data[0].author.profile.name);
 
   const toggleLike = useCallback((postId: string) => {
     setPosts((currentPosts) =>
