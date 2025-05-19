@@ -7,6 +7,8 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -19,12 +21,15 @@ import {
   Languages,
   Clock,
   Plus,
+  Star,
+  Users,
+  Calendar,
 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/service/auth';
-import { useHosts, usePlaces } from '@/hooks/useData';
+import { useHosts, usePlaces, useTours } from '@/hooks/useData';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 const PLACES = [
   {
@@ -85,12 +90,19 @@ const ads = [
 ];
 
 export default function Home() {
+  const { tours, loading: toursLoading, error: toursError } = useTours();
   const { user } = useAuthStore();
   const [selectedRole, setSelectedRole] = useState<'traveler' | 'host'>(
     'traveler'
   );
   const { places, loading: placesLoading, error: placesError } = usePlaces();
   const { hosts, loading: hostsLoading, error: hostsError } = useHosts();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   if (placesLoading || hostsLoading) {
     return (
@@ -109,6 +121,38 @@ export default function Home() {
       </View>
     );
   }
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20;
+    const isCloseToBottom =
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && !isLoadingMore && hasMore) {
+      loadMoreTours();
+    }
+  };
+
+  const loadMoreTours = () => {
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+    const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
+    const filteredTours = tours.filter(
+      (tour) =>
+        tour.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tour.location?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (startIndex >= filteredTours.length) {
+      setHasMore(false);
+    } else {
+      setCurrentPage(nextPage);
+    }
+    setIsLoadingMore(false);
+  };
 
   const renderTravelerContent = () => (
     <>
@@ -202,27 +246,155 @@ export default function Home() {
     </>
   );
 
-  const renderHostContent = () => (
-    <>
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Tours</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push('/tours/create-tour')}
-          >
-            <Plus size={24} color="#00BCD4" />
-          </TouchableOpacity>
+  const renderHostContent = () => {
+    const filteredTours = tours.filter(
+      (tour) =>
+        tour.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tour.location?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const paginatedTours = filteredTours.slice(0, currentPage * ITEMS_PER_PAGE);
+
+    return (
+      <>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Tours</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => router.push('/tours/create-tour')}
+            >
+              <Plus size={24} color="#00BCD4" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.searchContainer}>
+            <Search size={20} color="#666" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search tours..."
+              placeholderTextColor="#666"
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                setCurrentPage(1);
+                setHasMore(true);
+              }}
+            />
+          </View>
+
+          {toursLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#00BCD4" />
+            </View>
+          ) : toursError ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{toursError}</Text>
+            </View>
+          ) : filteredTours.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {searchQuery ? 'No tours found' : 'No tours created yet'}
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Create your first tour to get started'}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <ScrollView
+                ref={scrollViewRef}
+                style={styles.toursList}
+                showsVerticalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={400}
+              >
+                {paginatedTours.map((tour) => (
+                  <TouchableOpacity
+                    key={tour.id}
+                    style={styles.upcomingTourCard}
+                    onPress={() => router.push(`/tours/${tour.id}`)}
+                  >
+                    <View style={styles.tourHeader}>
+                      <View>
+                        <Text style={styles.tourName}>{tour.title}</Text>
+                        <View style={styles.locationContainer}>
+                          <MapPin size={16} color="#00BCD4" />
+                          <Text style={styles.locationText}>
+                            {tour.location?.name || 'No location'}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.dateContainer}>
+                        <Calendar size={16} color="#00BCD4" />
+                        <Text style={styles.dateText}>
+                          {tour?.startTime?.slice(0, 10)}
+                        </Text>
+                        <Text style={styles.timeText}>
+                          {tour?.startTime?.slice(11, 16)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.tourGuide}>
+                      <Image
+                        source={{
+                          uri:
+                            tour.host?.profile?.image ||
+                            'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                        }}
+                        style={styles.guideImage}
+                      />
+                      <View style={styles.guideInfo}>
+                        <Text style={styles.guideName}>
+                          {tour.host?.profile?.name || 'Unknown Host'}
+                        </Text>
+                        <View style={styles.guideStats}>
+                          <Star size={16} color="#FFD700" />
+                          <Text style={styles.ratingText}>
+                            {tour.host?.profile?.rating || 0}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.participantsContainer}>
+                        <Users size={16} color="#00BCD4" />
+                        <Text style={styles.participantsText}>
+                          {tour._count?.booking || 0} joined
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {isLoadingMore && (
+                  <View style={styles.loadingMoreContainer}>
+                    <ActivityIndicator size="small" color="#00BCD4" />
+                  </View>
+                )}
+                {!hasMore && paginatedTours.length > 0 && (
+                  <Text style={styles.endOfListText}>
+                    No more tours to load
+                  </Text>
+                )}
+              </ScrollView>
+
+              {currentPage > 1 && (
+                <TouchableOpacity
+                  style={styles.goToTopButton}
+                  onPress={() =>
+                    scrollViewRef.current?.scrollTo({ y: 0, animated: true })
+                  }
+                >
+                  <Text style={styles.goToTopButtonText}>↑</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No tours created yet</Text>
-          <Text style={styles.emptyStateSubtext}>
-            Create your first tour to get started
-          </Text>
-        </View>
-      </View>
-    </>
-  );
+      </>
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -458,6 +630,7 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: 16,
+    flex: 1,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -609,5 +782,176 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter',
     color: '#666',
+  },
+  seeAllButton: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#00BCD4',
+  },
+  upcomingTourCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  tourHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  tourName: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 4,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  dateContainer: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  dateText: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+  },
+  timeText: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  tourGuide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  guideImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  guideInfo: {
+    flex: 1,
+  },
+  guideName: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 2,
+  },
+  guideStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  participantsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  participantsText: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  recommendedContainer: {
+    paddingRight: 16,
+  },
+  recommendedCard: {
+    width: 240,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginRight: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  recommendedImage: {
+    width: '100%',
+    height: 160,
+  },
+  recommendedContent: {
+    padding: 12,
+  },
+  recommendedName: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 4,
+  },
+  recommendedPrice: {
+    fontSize: 18,
+    fontFamily: 'InterBold',
+    color: '#00BCD4',
+    marginBottom: 8,
+  },
+  recommendedStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  toursList: {
+    flex: 1,
+    marginTop: 20,
+  },
+  loadingMoreContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endOfListText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 14,
+    fontFamily: 'Inter',
+    paddingVertical: 20,
+  },
+  goToTopButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#00BCD4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  goToTopButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontFamily: 'InterBold',
   },
 });

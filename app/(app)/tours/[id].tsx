@@ -5,6 +5,9 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
@@ -14,8 +17,14 @@ import {
   Clock,
   Users,
   Star,
+  X,
+  CreditCard,
+  User,
+  Mail,
+  Phone,
 } from 'lucide-react-native';
 import { useTour } from '@/hooks/useData';
+import { useState } from 'react';
 
 const TOURS = {
   '1': {
@@ -62,7 +71,7 @@ const TOURS = {
       'https://images.pexels.com/photos/5087189/pexels-photo-5087189.jpeg',
     ],
   },
-  '2': {
+  '4': {
     id: '2',
     name: 'Modern Architecture Tour',
     guide: {
@@ -113,7 +122,167 @@ export default function TourDetail() {
   console.log(id);
   const mockTour = TOURS[id as keyof typeof TOURS];
   const { tour, loading, error } = useTour(Number(id));
-  console.log(tour, loading, error);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    name: '',
+    email: '',
+    phone: '',
+  });
+
+  const handlePayment = () => {
+    // Here you would typically make an API call to process the payment
+    setShowPaymentModal(false);
+    Alert.alert(
+      'Booking Confirmed!',
+      'Your tour has been successfully booked. You will receive a confirmation email shortly.',
+      [
+        {
+          text: 'View My Bookings',
+          onPress: () => router.push('/bookings'),
+        },
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]
+    );
+  };
+
+  const renderPaymentModal = () => (
+    <Modal
+      visible={showPaymentModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowPaymentModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Payment Information</Text>
+            <TouchableOpacity onPress={() => setShowPaymentModal(false)}>
+              <X size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.paymentForm}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Card Number</Text>
+              <View style={styles.inputContainer}>
+                <CreditCard size={20} color="#666" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="1234 5678 9012 3456"
+                  keyboardType="numeric"
+                  maxLength={19}
+                  value={paymentInfo.cardNumber}
+                  onChangeText={(text) => {
+                    const formatted = text
+                      .replace(/\s/g, '')
+                      .replace(/(\d{4})/g, '$1 ')
+                      .trim();
+                    setPaymentInfo({ ...paymentInfo, cardNumber: formatted });
+                  }}
+                />
+              </View>
+            </View>
+
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.inputLabel}>Expiry Date</Text>
+                <View style={styles.inputContainer}>
+                  <Calendar size={20} color="#666" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="MM/YY"
+                    keyboardType="numeric"
+                    maxLength={5}
+                    value={paymentInfo.expiryDate}
+                    onChangeText={(text) => {
+                      const formatted = text
+                        .replace(/\D/g, '')
+                        .replace(/(\d{2})(\d{0,2})/, '$1/$2');
+                      setPaymentInfo({ ...paymentInfo, expiryDate: formatted });
+                    }}
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.inputLabel}>CVV</Text>
+                <View style={styles.inputContainer}>
+                  <CreditCard size={20} color="#666" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="123"
+                    keyboardType="numeric"
+                    maxLength={3}
+                    value={paymentInfo.cvv}
+                    onChangeText={(text) =>
+                      setPaymentInfo({ ...paymentInfo, cvv: text })
+                    }
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Full Name</Text>
+              <View style={styles.inputContainer}>
+                <User size={20} color="#666" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="John Doe"
+                  value={paymentInfo.name}
+                  onChangeText={(text) =>
+                    setPaymentInfo({ ...paymentInfo, name: text })
+                  }
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={styles.inputContainer}>
+                <Mail size={20} color="#666" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="john@example.com"
+                  keyboardType="email-address"
+                  value={paymentInfo.email}
+                  onChangeText={(text) =>
+                    setPaymentInfo({ ...paymentInfo, email: text })
+                  }
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Phone</Text>
+              <View style={styles.inputContainer}>
+                <Phone size={20} color="#666" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="+1 234 567 8900"
+                  keyboardType="phone-pad"
+                  value={paymentInfo.phone}
+                  onChangeText={(text) =>
+                    setPaymentInfo({ ...paymentInfo, phone: text })
+                  }
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
+              <Text style={styles.payButtonText}>Pay ${tour.price}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (tour.length < 1) {
     return (
@@ -132,9 +301,13 @@ export default function TourDetail() {
           showsHorizontalScrollIndicator={false}
           style={styles.imageSlider}
         >
-          {mockTour.images.map((image, index) => (
-            <Image key={index} source={{ uri: image }} style={styles.image} />
-          ))}
+          {/* {mockTour.images.map((image, index) => ( */}
+          <Image
+            // key={index}
+            source={{ uri: tour.location.image }}
+            style={styles.image}
+          />
+          {/* ))} */}
         </ScrollView>
         <TouchableOpacity
           style={styles.backButton}
@@ -251,11 +424,16 @@ export default function TourDetail() {
             <Text style={styles.priceLabel}>Price per person</Text>
             <Text style={styles.price}>${tour.price}</Text>
           </View>
-          <TouchableOpacity style={styles.bookButton}>
+          <TouchableOpacity
+            style={styles.bookButton}
+            onPress={() => setShowPaymentModal(true)}
+          >
             <Text style={styles.bookButtonText}>Book Now</Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {renderPaymentModal()}
     </ScrollView>
   );
 }
@@ -448,6 +626,71 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   bookButtonText: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'InterBold',
+    color: '#000',
+  },
+  paymentForm: {
+    marginTop: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    marginLeft: 8,
+    fontSize: 16,
+    fontFamily: 'Inter',
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  payButton: {
+    backgroundColor: '#00BCD4',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  payButtonText: {
     fontSize: 16,
     fontFamily: 'InterSemiBold',
     color: '#fff',

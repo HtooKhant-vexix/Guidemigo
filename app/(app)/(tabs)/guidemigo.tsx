@@ -75,7 +75,7 @@ export default function Guidemigo() {
   const { hosts, loading: userLoading, error: userErr } = useHosts();
   const { tours, loading, error } = useTours();
   // console.log(hosts, '......hosts');
-  console.log(tours[0]?.host.profile, '......tours');
+  console.log(tours, '......tours');
 
   if (loading) {
     return (
@@ -118,8 +118,13 @@ export default function Guidemigo() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Upcoming Tours</Text>
-        {tours.map((tour) => (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Upcoming Tours</Text>
+          <TouchableOpacity onPress={() => router.push('/tours/all')}>
+            <Text style={styles.seeAllButton}>See All</Text>
+          </TouchableOpacity>
+        </View>
+        {tours?.slice(0, 2).map((tour) => (
           <TouchableOpacity
             key={tour.id}
             style={styles.upcomingTourCard}
@@ -174,13 +179,18 @@ export default function Guidemigo() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommended Tours</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recommended Tours</Text>
+          <TouchableOpacity onPress={() => router.push('/tours/all')}>
+            <Text style={styles.seeAllButton}>See All</Text>
+          </TouchableOpacity>
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recommendedContainer}
         >
-          {tours.map((tour) => (
+          {tours.slice(0, 3).map((tour) => (
             <TouchableOpacity
               key={tour.id}
               style={styles.recommendedCard}
@@ -255,11 +265,21 @@ const styles = StyleSheet.create({
   section: {
     padding: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'InterSemiBold',
     color: '#000',
-    marginBottom: 16,
+  },
+  seeAllButton: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#00BCD4',
   },
   upcomingTourCard: {
     backgroundColor: '#fff',

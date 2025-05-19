@@ -5,11 +5,20 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, Star, Globe, Users, Calendar } from 'lucide-react-native';
-import { useHost, useHosts, useReview } from '@/hooks/useData';
-import { useEffect } from 'react';
+import {
+  ArrowLeft,
+  Star,
+  Globe,
+  Users,
+  Calendar,
+  X,
+  MapPin,
+} from 'lucide-react-native';
+import { useHost, useHosts, useReview, useTours } from '@/hooks/useData';
+import { useEffect, useState } from 'react';
 
 const HOSTS = {
   '1': {
@@ -134,6 +143,10 @@ export default function HostDetail() {
     loading: single_loading,
     error: single_err,
   } = useHost(Number(id));
+  const { tours } = useTours();
+  const [showToursModal, setShowToursModal] = useState(false);
+
+  const hostTours = tours.filter((tour) => tour.host?.id === Number(id));
 
   if (!host) {
     return (
@@ -142,6 +155,64 @@ export default function HostDetail() {
       </View>
     );
   }
+
+  const renderToursModal = () => (
+    <Modal
+      visible={showToursModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowToursModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Available Tours</Text>
+            <TouchableOpacity onPress={() => setShowToursModal(false)}>
+              <X size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.toursList}>
+            {hostTours.map((tour) => (
+              <TouchableOpacity
+                key={tour.id}
+                style={styles.tourCard}
+                onPress={() => {
+                  setShowToursModal(false);
+                  router.push(`/tours/${tour.id}`);
+                }}
+              >
+                <Image
+                  source={{
+                    uri:
+                      tour.location?.image ||
+                      'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                  }}
+                  style={styles.tourImage}
+                />
+                <View style={styles.tourInfo}>
+                  <Text style={styles.tourName}>{tour.title}</Text>
+                  <View style={styles.tourDetails}>
+                    <Calendar size={16} color="#00BCD4" />
+                    <Text style={styles.tourDate}>
+                      {tour.startTime?.slice(0, 10)}
+                    </Text>
+                  </View>
+                  <View style={styles.tourDetails}>
+                    <MapPin size={16} color="#00BCD4" />
+                    <Text style={styles.tourLocation}>
+                      {tour.location?.name || 'No location'}
+                    </Text>
+                  </View>
+                  <Text style={styles.tourPrice}>${tour.price}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -214,10 +285,15 @@ export default function HostDetail() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.bookButton}>
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={() => setShowToursModal(true)}
+        >
           <Text style={styles.bookButtonText}>Book a Tour</Text>
         </TouchableOpacity>
       </View>
+
+      {renderToursModal()}
     </ScrollView>
   );
 }
@@ -343,5 +419,74 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'InterSemiBold',
     color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'InterBold',
+    color: '#000',
+  },
+  toursList: {
+    marginTop: 16,
+  },
+  tourCard: {
+    flexDirection: 'row',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  tourImage: {
+    width: 120,
+    height: 120,
+  },
+  tourInfo: {
+    flex: 1,
+    padding: 12,
+  },
+  tourName: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  tourDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  tourDate: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  tourLocation: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  tourPrice: {
+    fontSize: 18,
+    fontFamily: 'InterBold',
+    color: '#00BCD4',
+    marginTop: 8,
   },
 });
