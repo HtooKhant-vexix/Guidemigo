@@ -18,11 +18,13 @@ import {
   Bookmark,
   Languages,
   Clock,
+  Plus,
 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/service/auth';
 import { useHosts, usePlaces } from '@/hooks/useData';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
+import { useState } from 'react';
 
 const PLACES = [
   {
@@ -46,7 +48,7 @@ const PLACES = [
     name: 'Orchid Garden',
     location: 'Singapore',
     image: require('../../../assets/images/orchid.jpg'),
-    cap: 'Exploring Singapore’s Orchid Garden',
+    cap: 'Exploring Singapores Orchid Garden',
     host: require('../../../assets/images/p2.jpg'),
   },
 ];
@@ -84,14 +86,11 @@ const ads = [
 
 export default function Home() {
   const { user } = useAuthStore();
-  // console.log(user, 'user');
-
+  const [selectedRole, setSelectedRole] = useState<'traveler' | 'host'>(
+    'traveler'
+  );
   const { places, loading: placesLoading, error: placesError } = usePlaces();
   const { hosts, loading: hostsLoading, error: hostsError } = useHosts();
-  console.log(places, 'hosts');
-
-  // console.log(hosts, 'hosts');
-  // console.log(places, 'places');
 
   if (placesLoading || hostsLoading) {
     return (
@@ -111,68 +110,8 @@ export default function Home() {
     );
   }
 
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.bg}>
-        <View style={styles.header}>
-          <View style={styles.locationContainer}>
-            <MapPin size={34} color="#fafafa" />
-            <View>
-              <Text style={styles.locationLabel}>Home</Text>
-              <Text style={styles.locationText}>Marina Bay, Singapore</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Bell size={24} color="#00BCD4" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.searchContainer}>
-          <Search size={20} color="#666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Here"
-            placeholderTextColor="#666"
-          />
-        </View>
-        <Text style={styles.title}>
-          Go Everywhere and Create a{'\n'}Moment Everywhere!
-        </Text>
-      </View>
-
-      <View style={styles.roleContainer}>
-        <TouchableOpacity
-          style={styles.roleButton}
-          onPress={async () => {
-            const tokens = await AsyncStorage.getItem('tokens');
-            // console.log(tokens, 'tokens');
-          }}
-        >
-          {/* <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b',
-            }}
-            style={styles.roleIcon}
-          /> */}
-          <Backpack size={34} color="#fafafa" />
-          <Text style={styles.roleText}>Traveller</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.roleButton, styles.roleButtonLight]}>
-          {/* <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846',
-            }}
-            style={styles.roleIcon}
-          /> */}
-          <CircleUserRound size={34} color="#00BCD4" />
-          <Text style={[styles.roleText, { color: '#00BCD4' }]}>Host</Text>
-          <View style={styles.joinBadge}>
-            <Text style={styles.joinText}>JOIN</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
+  const renderTravelerContent = () => (
+    <>
       <View style={styles.section}>
         <ScrollView
           horizontal
@@ -180,11 +119,7 @@ export default function Home() {
           style={styles.hostsList}
         >
           {ads.map((host) => (
-            <TouchableOpacity
-              key={host.id}
-              style={styles.ads}
-              // onPress={() => router.push(`/hosts/${host.id}`)}
-            >
+            <TouchableOpacity key={host.id} style={styles.ads}>
               <Image source={host.image} style={styles.adsImage} />
             </TouchableOpacity>
           ))}
@@ -203,7 +138,6 @@ export default function Home() {
           showsHorizontalScrollIndicator={false}
           style={styles.hostsList}
         >
-          {/* {HOSTS.map((host) => ( */}
           {hosts.map((host) => (
             <TouchableOpacity
               key={host.id}
@@ -265,40 +199,115 @@ export default function Home() {
           ))}
         </ScrollView>
       </View>
+    </>
+  );
 
+  const renderHostContent = () => (
+    <>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Trending in Singapore</Text>
-          <TouchableOpacity onPress={() => router.push('/trend/all')}>
-            <Text style={styles.viewAllButton}>View All</Text>
+          <Text style={styles.sectionTitle}>My Tours</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/tours/create-tour')}
+          >
+            <Plus size={24} color="#00BCD4" />
           </TouchableOpacity>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.hostsList}
-        >
-          {PLACES.reverse().map((host) => (
-            <TouchableOpacity
-              key={host.id}
-              style={styles.trendCard}
-              onPress={() => router.push(`/trend/${host.id}`)}
-            >
-              <Image source={host.image} style={styles.trendImage} />
-              <View style={styles.hostInfo}>
-                <View style={styles.trendName}>
-                  <Image source={host.host} style={styles.roleTrendIcon} />
-                  <Text style={styles.hostTrendName}>{host.cap}</Text>
-                </View>
-                <View style={styles.hostRating}>
-                  <Clock size={20} color="#00BCD4" />
-                  <Text style={styles.hostDetails}>30min ago</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No tours created yet</Text>
+          <Text style={styles.emptyStateSubtext}>
+            Create your first tour to get started
+          </Text>
+        </View>
       </View>
+    </>
+  );
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.bg}>
+        <View style={styles.header}>
+          <View style={styles.locationContainer}>
+            <MapPin size={34} color="#fafafa" />
+            <View>
+              <Text style={styles.locationLabel}>Home</Text>
+              <Text style={styles.locationText}>Marina Bay, Singapore</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <Bell size={24} color="#00BCD4" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <Search size={20} color="#666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Here"
+            placeholderTextColor="#666"
+          />
+        </View>
+        <Text style={styles.title}>
+          Go Everywhere and Create a{'\n'}Moment Everywhere!
+        </Text>
+      </View>
+
+      <View style={styles.roleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.roleButton,
+            selectedRole === 'traveler' && styles.roleButtonActive,
+          ]}
+          onPress={() => setSelectedRole('traveler')}
+        >
+          <Backpack
+            size={34}
+            color={selectedRole === 'traveler' ? '#fafafa' : '#00BCD4'}
+          />
+          <Text
+            style={[
+              styles.roleText,
+              selectedRole === 'traveler'
+                ? { color: '#fafafa' }
+                : { color: '#00BCD4' },
+            ]}
+          >
+            Traveller
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.roleButton,
+            styles.roleButtonLight,
+            selectedRole === 'host' && styles.roleButtonActive,
+          ]}
+          onPress={() => setSelectedRole('host')}
+        >
+          <CircleUserRound
+            size={34}
+            color={selectedRole === 'host' ? '#fafafa' : '#00BCD4'}
+          />
+          <Text
+            style={[
+              styles.roleText,
+              selectedRole === 'host'
+                ? { color: '#fafafa' }
+                : { color: '#00BCD4' },
+            ]}
+          >
+            Host
+          </Text>
+          <View style={styles.joinBadge}>
+            <Text style={styles.joinText}>JOIN</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {selectedRole === 'traveler'
+        ? renderTravelerContent()
+        : renderHostContent()}
     </ScrollView>
   );
 }
@@ -410,7 +419,8 @@ const styles = StyleSheet.create({
     display: 'flex',
     justifyContent: 'center',
     paddingVertical: 26,
-    backgroundColor: '#00BCD4',
+    // backgroundColor: '#00BCD4',
+    backgroundColor: '#f5f5f5',
     borderRadius: 12,
     gap: 10,
   },
@@ -568,6 +578,34 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   placeLocationText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  roleButtonActive: {
+    backgroundColor: '#00BCD4',
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    marginTop: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
     fontSize: 14,
     fontFamily: 'Inter',
     color: '#666',

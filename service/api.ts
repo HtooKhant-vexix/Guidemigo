@@ -189,8 +189,10 @@ export const updateComment = async (
 
 export const fetchTours = async () => {
   const { data } = await api.get('/tour');
+  console.log(data, 'this is data from service');
   return data;
 };
+
 export const fetchTour = async (id: number) => {
   const { data } = await api.get(`/tour/${id}`);
   return data;

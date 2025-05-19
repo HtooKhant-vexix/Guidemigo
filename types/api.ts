@@ -29,15 +29,15 @@ export interface Review {
 export interface Place {
   id: string;
   name: string;
-  location: string;
-  image_url: string;
-  rating: number;
-  duration: string;
-  group_size: string;
-  description: string;
-  highlights: string[];
-  created_at: string;
-  user_id: string;
+  address: string;
+  image: string;
+  rating?: number;
+  duration?: string;
+  group_size?: string;
+  description?: string;
+  highlights?: string[];
+  created_at?: string;
+  user_id?: string;
 }
 
 export interface Post {

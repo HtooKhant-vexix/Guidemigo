@@ -84,11 +84,6 @@ export default function TabLayout() {
         icon: MapPin,
       },
       {
-        name: 'create-tour',
-        title: 'Create Tour',
-        icon: PlusCircle,
-      },
-      {
         name: 'more',
         title: 'More',
         icon: Menu,

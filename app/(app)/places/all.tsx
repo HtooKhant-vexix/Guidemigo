@@ -57,7 +57,7 @@ const ALL_PLACES = [
 
 export default function AllPlaces() {
   const { places, loading, error } = usePlaces();
-  console.log(places[0].image, '......hosts');
+  console.log(places[0]?.image, '......hosts');
   return (
     <View style={styles.container}>
       <View style={styles.header}>

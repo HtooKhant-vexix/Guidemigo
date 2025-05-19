@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import { Search, MapPin, Star, Clock, Users } from 'lucide-react-native';
 import { usePlaces } from '@/hooks/useData';
 import { SkeletonPlaceCard } from '@/components/SkeletonPlaceCard';
+import { Place } from '@/types/api';
 
 const CATEGORIES = [
   { id: '1', name: 'Popular', icon: '🔥' },
@@ -23,148 +24,118 @@ const CATEGORIES = [
   { id: '6', name: 'Nightlife', icon: '🌙' },
 ];
 
-const FEATURED_PLACES = [
-  {
-    id: '1',
-    name: 'Gardens by the Bay',
-    location: 'Marina Bay',
-    image: 'https://images.pexels.com/photos/1057840/pexels-photo-1057840.jpeg',
-    rating: 4.8,
-    reviews: 3245,
-    category: 'Nature',
-  },
-  {
-    id: '2',
-    name: 'Chinatown',
-    location: 'Outram',
-    image: 'https://images.pexels.com/photos/2187605/pexels-photo-2187605.jpeg',
-    rating: 4.6,
-    reviews: 2891,
-    category: 'Culture',
-  },
-  {
-    id: '3',
-    name: 'Maxwell Food Centre',
-    location: 'Chinatown',
-    image: 'https://images.pexels.com/photos/5409015/pexels-photo-5409015.jpeg',
-    rating: 4.7,
-    reviews: 4521,
-    category: 'Food',
-  },
-];
+interface SearchBarProps {
+  onSearch: (text: string) => void;
+}
 
-const TRENDING_PLACES = [
-  {
-    id: '1',
-    name: 'ArtScience Museum',
-    location: 'Marina Bay',
-    image: 'https://images.pexels.com/photos/4388167/pexels-photo-4388167.jpeg',
-    rating: 4.5,
-    price: '$$',
-    category: 'Culture',
-  },
-  {
-    id: '2',
-    name: 'Singapore Zoo',
-    location: 'Mandai',
-    image: 'https://images.pexels.com/photos/145939/pexels-photo-145939.jpeg',
-    rating: 4.7,
-    price: '$$$',
-    category: 'Nature',
-  },
-  {
-    id: '3',
-    name: 'Clarke Quay',
-    location: 'Singapore River',
-    image: 'https://images.pexels.com/photos/1538177/pexels-photo-1538177.jpeg',
-    rating: 4.4,
-    price: '$$$',
-    category: 'Nightlife',
-  },
-];
+interface CategoryButtonProps {
+  category: {
+    id: string;
+    name: string;
+    icon: string;
+  };
+  onPress: (id: string) => void;
+}
 
-export default function Places() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const { places, loading, error } = usePlaces();
+interface PlaceCardProps {
+  place: Place;
+}
 
-  const SearchBar = memo(({ onSearch }) => (
-    <View style={styles.searchBar}>
-      <Search size={20} color="#666" />
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search places..."
-        placeholderTextColor="#666"
-        onChangeText={onSearch}
-      />
+const SearchBar = memo(({ onSearch }: SearchBarProps) => (
+  <View style={styles.searchBar}>
+    <Search size={20} color="#666" />
+    <TextInput
+      style={styles.searchInput}
+      placeholder="Search places..."
+      placeholderTextColor="#666"
+      onChangeText={onSearch}
+    />
+  </View>
+));
+
+const CategoryButton = memo(({ category, onPress }: CategoryButtonProps) => (
+  <TouchableOpacity
+    style={styles.categoryButton}
+    onPress={() => onPress(category.id)}
+  >
+    <Text style={styles.categoryIcon}>{category.icon}</Text>
+    <Text style={styles.categoryName}>{category.name}</Text>
+  </TouchableOpacity>
+));
+
+const FeaturedCard = memo(({ place }: PlaceCardProps) => (
+  <TouchableOpacity
+    style={styles.featuredCard}
+    onPress={() => router.push(`/places/${place.id}`)}
+  >
+    <Image source={{ uri: place.image }} style={styles.featuredImage} />
+    <View style={styles.featuredContent}>
+      <Text style={styles.placeName}>{place.name}</Text>
+      <View style={styles.placeInfo}>
+        <View style={styles.locationContainer}>
+          <MapPin size={14} color="#666" />
+          <Text style={styles.locationText}>{place.address}</Text>
+        </View>
+        {/* <View style={styles.ratingContainer}>
+          <Star size={14} color="#FFD700" />
+          <Text style={styles.ratingText}>{place.rating}</Text>
+        </View> */}
+      </View>
+      {/* <View style={styles.categoryTag}>
+        <Text style={styles.categoryTagText}>{place.group_size}</Text>
+      </View> */}
     </View>
-  ));
+  </TouchableOpacity>
+));
 
-  const CategoryButton = memo(({ category, onPress }) => (
-    <TouchableOpacity
-      style={styles.categoryButton}
-      onPress={() => onPress(category.id)}
-    >
-      <Text style={styles.categoryIcon}>{category.icon}</Text>
-      <Text style={styles.categoryName}>{category.name}</Text>
-    </TouchableOpacity>
-  ));
-
-  const FeaturedCard = memo(({ place }) => (
-    <TouchableOpacity
-      style={styles.featuredCard}
-      onPress={() => router.push(`/places/${place.id}`)}
-    >
-      <Image source={{ uri: place.image }} style={styles.featuredImage} />
-      <View style={styles.featuredContent}>
+const TrendingCard = memo(({ place }: PlaceCardProps) => (
+  <TouchableOpacity
+    style={styles.trendingCard}
+    onPress={() => router.push(`/places/${place.id}`)}
+  >
+    <Image source={{ uri: place.image }} style={styles.trendingImage} />
+    <View style={styles.trendingContent}>
+      <View>
         <Text style={styles.placeName}>{place.name}</Text>
         <View style={styles.placeInfo}>
           <View style={styles.locationContainer}>
             <MapPin size={14} color="#666" />
-            <Text style={styles.locationText}>{place.location}</Text>
+            <Text style={styles.locationText}>{place.address}</Text>
           </View>
-          <View style={styles.ratingContainer}>
+          {/* <View style={styles.ratingContainer}>
             <Star size={14} color="#FFD700" />
-            <Text style={styles.ratingText}>
-              {place.rating} ({place.reviews})
-            </Text>
-          </View>
-        </View>
-        <View style={styles.categoryTag}>
-          <Text style={styles.categoryTagText}>{place.category}</Text>
+            <Text style={styles.ratingText}>{place.rating}</Text>
+          </View> */}
         </View>
       </View>
-    </TouchableOpacity>
-  ));
+      {/* <View style={styles.priceTag}>
+        <Text style={styles.priceText}>{place.duration}</Text>
+      </View> */}
+    </View>
+  </TouchableOpacity>
+));
 
-  const TrendingCard = memo(({ place }) => (
-    <TouchableOpacity
-      style={styles.trendingCard}
-      onPress={() => router.push(`/places/${place.id}`)}
-    >
-      <Image source={{ uri: place.image }} style={styles.trendingImage} />
-      <View style={styles.trendingContent}>
-        <View>
-          <Text style={styles.placeName}>{place.name}</Text>
-          <View style={styles.placeInfo}>
-            <View style={styles.locationContainer}>
-              <MapPin size={14} color="#666" />
-              <Text style={styles.locationText}>{place.location}</Text>
-            </View>
-            <View style={styles.ratingContainer}>
-              <Star size={14} color="#FFD700" />
-              <Text style={styles.ratingText}>{place.rating}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.priceTag}>
-          <Text style={styles.priceText}>{place.price}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  ));
+export default function Places() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const { places, loading, error } = usePlaces();
+  console.log(places);
 
-  // const featuredPlaces = places?.slice(0, 3);
-  // const trendingPlaces = places?.slice(3, 6);
+  const filteredPlaces = useMemo(() => {
+    if (!searchQuery) return places;
+    return places.filter(
+      (place) =>
+        place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.address.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [places, searchQuery]);
+
+  const featuredPlaces = useMemo(() => {
+    return filteredPlaces.slice(0, 3);
+  }, [filteredPlaces]);
+
+  const trendingPlaces = useMemo(() => {
+    return filteredPlaces.slice(3, 6);
+  }, [filteredPlaces]);
 
   const renderContent = () => {
     if (loading) {
@@ -242,7 +213,7 @@ export default function Places() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Featured Places</Text>
-          <TouchableOpacity onPress={() => router.push('/places/featured')}>
+          <TouchableOpacity onPress={() => router.push('/places/all')}>
             <Text style={styles.seeAllButton}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -251,13 +222,13 @@ export default function Places() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.featuredContainer}
         >
-          {FEATURED_PLACES.map((place) => (
+          {featuredPlaces.map((place) => (
             <FeaturedCard key={place.id} place={place} />
           ))}
         </ScrollView>
       </View>
     ),
-    []
+    [featuredPlaces]
   );
 
   const trendingContent = useMemo(
@@ -265,17 +236,18 @@ export default function Places() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Trending Now</Text>
-          <TouchableOpacity onPress={() => router.push('/places/trending')}>
+          <TouchableOpacity onPress={() => router.push('/places/all')}>
             <Text style={styles.seeAllButton}>See All</Text>
           </TouchableOpacity>
         </View>
-        {TRENDING_PLACES.map((place) => (
+        {trendingPlaces.map((place) => (
           <TrendingCard key={place.id} place={place} />
         ))}
       </View>
     ),
-    []
+    [trendingPlaces]
   );
+
   return <>{renderContent()}</>;
 }
 
