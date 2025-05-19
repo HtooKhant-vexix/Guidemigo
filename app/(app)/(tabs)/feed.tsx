@@ -127,7 +127,12 @@ const PostHeader = memo(({ user, location }: PostHeaderProps) => (
   <View style={styles.postHeader}>
     <TouchableOpacity
       style={styles.userInfo}
-      onPress={() => router.push(`/profile/${user.name}`)}
+      onPress={() =>
+        router.push({
+          pathname: '/(app)/profile/[id]',
+          params: { id: user.name },
+        })
+      }
     >
       <Image
         source={{
@@ -181,7 +186,12 @@ const PostActions = memo(({ post, onLike }: PostActionsProps) => (
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => router.push(`/feed/post/${post.id}#comments`)}
+        onPress={() =>
+          router.push({
+            pathname: '/(app)/feed/post/[id]',
+            params: { id: post.id },
+          })
+        }
       >
         <MessageCircle size={24} color="#666" />
         <Text style={styles.actionText}>{post.comments || 0}</Text>

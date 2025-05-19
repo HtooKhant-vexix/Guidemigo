@@ -8,6 +8,13 @@ export interface User {
 
 export interface Host {
   id: string;
+  profile: {
+    name: string;
+    image: string;
+    rating: number;
+    travellers: number;
+    languages: string[];
+  };
   name: string;
   languages: string[];
   travelers: number;
@@ -42,9 +49,23 @@ export interface Place {
 
 export interface Post {
   id: string;
+  title: string;
   content: string;
-  location?: string;
-  user: User;
+  startTime: string;
+  location: {
+    name: string;
+  };
+  host: {
+    profile: {
+      name: string;
+      image: string;
+      rating: number;
+    };
+  };
+  _count: {
+    booking: number;
+  };
+  price: number;
   images: string[];
   likes: number;
   comments: number;

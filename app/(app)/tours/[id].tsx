@@ -145,7 +145,7 @@ export default function TourDetail() {
         },
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/(app)/(tabs)'),
         },
       ]
     );

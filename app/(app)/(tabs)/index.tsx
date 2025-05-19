@@ -320,9 +320,9 @@ export default function Home() {
                     <View style={styles.tourHeader}>
                       <View>
                         <Text style={styles.tourName}>{tour.title}</Text>
-                        <View style={styles.locationContainer}>
+                        <View style={styles.tourLocationContainer}>
                           <MapPin size={16} color="#00BCD4" />
-                          <Text style={styles.locationText}>
+                          <Text style={styles.tourLocationText}>
                             {tour.location?.name || 'No location'}
                           </Text>
                         </View>
@@ -807,12 +807,12 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 4,
   },
-  locationContainer: {
+  tourLocationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  locationText: {
+  tourLocationText: {
     fontSize: 14,
     fontFamily: 'Inter',
     color: '#666',
