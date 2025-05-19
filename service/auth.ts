@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import { create } from 'zustand';
 
 interface AuthTokens {
@@ -15,13 +15,22 @@ interface User {
   role?: string | null;
 }
 
+interface AuthResponse {
+  data: {
+    user: User;
+    accessToken: string;
+    refreshToken: string;
+  };
+  success: boolean;
+}
+
 interface AuthState {
-  user: User | null | undefined;
+  user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isLoading: boolean;
   error: string | null;
-  isAuthenticated: boolean; // Added this property
+  isAuthenticated: boolean;
   initializeAuth: (tokens: AuthTokens) => Promise<void>;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (data: {
@@ -29,10 +38,10 @@ interface AuthState {
     password: string;
     name: string;
     type: string;
-  }) => Promise<void>;
+  }) => Promise<AuthTokens | null>;
   logout: () => Promise<void>;
   clearError: () => void;
-  setup: any;
+  setup: (data: any, token: AuthTokens) => Promise<any>;
 }
 
 const api = axios.create({
@@ -40,11 +49,27 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
-let refreshPromise: Promise<AuthTokens> | null = null;
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
 
-export const useAuthStore = create<AuthState>((set) => ({
+const processQueue = (error: any = null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   refreshToken: null,
@@ -55,36 +80,27 @@ export const useAuthStore = create<AuthState>((set) => ({
   initializeAuth: async (tokens: AuthTokens) => {
     try {
       set({ isLoading: true });
-      // const response = await api.get('/auth/refresh-token', {
-      //   headers: { Authorization: `Bearer ${tokens.accessToken}` },
-      // });
-
-      // console.log('init..............................');
-
-      const response = await api.post(
+      const response = await api.post<AuthResponse>(
         '/auth/refresh-token',
-        {
-          refreshToken: tokens.refreshToken,
-        },
-        {
-          headers: { Authorization: `Bearer ${tokens.accessToken}` },
-        }
+        { refreshToken: tokens.refreshToken },
+        { headers: { Authorization: `Bearer ${tokens.accessToken}` } }
       );
 
-      // console.log(
-      //   response.data.data.user,
-      //   'response...........................'
-      // );
-
-      set({
-        user: response.data.data.user,
-        isAuthenticated: true,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        isLoading: false,
-      });
+      if (response.data.success) {
+        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
+        set({
+          user: response.data.data.user,
+          isAuthenticated: true,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          isLoading: false,
+        });
+      } else {
+        throw new Error('Failed to initialize auth');
+      }
     } catch (error) {
       set({ isLoading: false });
+      await AsyncStorage.removeItem('tokens');
       throw error;
     }
   },
@@ -92,24 +108,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (credentials) => {
     try {
       set({ isLoading: true, error: null });
-      const { data } = await api.post('/auth/login', credentials);
-      // console.log(data.data.accessToken);
-      // console.log(data.data.refreshToken);
-      // console.log(data.data.user);
-      await AsyncStorage.setItem(
-        'tokens',
-        JSON.stringify({
+      const { data } = await api.post<AuthResponse>('/auth/login', credentials);
+
+      if (data.success) {
+        const tokens = {
           accessToken: data.data.accessToken,
           refreshToken: data.data.refreshToken,
-        })
-      );
+        };
 
-      set({
-        user: data.data.user,
-        accessToken: data.data.accessToken,
-        refreshToken: data.data.refreshToken,
-        isLoading: false,
-      });
+        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
+        set({
+          user: data.data.user,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        throw new Error('Login failed');
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to login',
@@ -122,43 +139,32 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (data) => {
     try {
       set({ isLoading: true, error: null });
-      const response = await api.post('/auth/register', data);
+      const response = await api.post<AuthResponse>('/auth/register', data);
 
-      // await AsyncStorage.setItem(
-      //   'tokens',
-      //   JSON.stringify({
-      //     accessToken: response.data.data.accessToken,
-      //     refreshToken: response.data.data.refreshToken,
-      //   })
-      // );
+      if (response.data.success) {
+        const tokens = {
+          accessToken: response.data.data.accessToken,
+          refreshToken: response.data.data.refreshToken,
+        };
 
-      set({
-        isLoading: false,
-      });
-      return {
-        user: response.data.data.user.id,
-        accessToken: response.data.data.accessToken,
-        refreshToken: response.data.data.refreshToken,
-      };
+        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
+        set({ isLoading: false });
+        return tokens;
+      } else {
+        throw new Error('Registration failed');
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to register',
         isLoading: false,
       });
-      throw error;
+      return null;
     }
   },
 
   setup: async (data, token) => {
     try {
       set({ isLoading: true, error: null });
-      // console.log(
-      //   Number(data.id),
-      //   token,
-      //   `/user/profile/update?id=${Number(data.id)}`,
-      //   'data.....gg......................'
-      // );
-
       const formData = new FormData();
       formData.append('id', data.id);
       formData.append('name', data.name);
@@ -170,14 +176,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       formData.append('type', data.type);
       formData.append('experience', data.experience || '');
       formData.append('travellers', data.travellers.toString());
-      data.languages.forEach((language) =>
-        formData.append('languages[]', language)
-      );
-      data.expertise?.forEach((expertise) =>
-        formData.append('expertise[]', expertise)
-      );
 
-      // console.log('FormData:', formData);
+      if (Array.isArray(data.languages)) {
+        data.languages.forEach((language: string) => {
+          formData.append('languages[]', language);
+        });
+      }
+
+      if (Array.isArray(data.expertise)) {
+        data.expertise.forEach((expertise: string) => {
+          formData.append('expertise[]', expertise);
+        });
+      }
 
       const response = await axios.patch(
         `/user/profile/update?id=${Number(data.id)}`,
@@ -191,16 +201,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           },
         }
       );
-      // console.log(response, 'response...........................');
 
-      await AsyncStorage.setItem(
-        'tokens',
-        JSON.stringify({
-          accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
-        })
-      );
-
+      await AsyncStorage.setItem('tokens', JSON.stringify(token));
       set({
         user: response.data.user,
         accessToken: token.accessToken,
@@ -211,10 +213,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       return response.data;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to register',
+        error:
+          error instanceof Error ? error.message : 'Failed to update profile',
         isLoading: false,
       });
-      // console.log(error, 'error...........................');
       throw error;
     }
   },
@@ -227,58 +229,87 @@ export const useAuthStore = create<AuthState>((set) => ({
         accessToken: null,
         refreshToken: null,
         isAuthenticated: false,
+        error: null,
       });
     } catch (error) {
       console.error('Logout error:', error);
+      set({ error: 'Failed to logout' });
     }
   },
 
   clearError: () => set({ error: null }),
 }));
 
+// Request interceptor
 api.interceptors.request.use(
   async (config) => {
     const tokens = await AsyncStorage.getItem('tokens');
     if (tokens) {
       const { accessToken } = JSON.parse(tokens) as AuthTokens;
-      config.headers.Authorization = `Bearer ${accessToken}`;
+      if (config.headers) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (!originalRequest) return Promise.reject(error);
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        if (!refreshPromise) {
-          const tokens = await AsyncStorage.getItem('tokens');
-          if (!tokens) throw new Error('No refresh token');
+        const tokens = await AsyncStorage.getItem('tokens');
+        if (!tokens) throw new Error('No refresh token available');
 
-          const { refreshToken } = JSON.parse(tokens) as AuthTokens;
-          refreshPromise = api
-            .post<AuthTokens>('/auth/refresh-token', { refreshToken })
-            .then((response) => response.data)
-            .finally(() => {
-              refreshPromise = null;
-            });
+        const { refreshToken } = JSON.parse(tokens) as AuthTokens;
+        const { data } = await api.post<AuthResponse>('/auth/refresh-token', {
+          refreshToken,
+        });
+
+        if (data.success) {
+          const newTokens = {
+            accessToken: data.data.accessToken,
+            refreshToken: data.data.refreshToken,
+          };
+
+          await AsyncStorage.setItem('tokens', JSON.stringify(newTokens));
+          processQueue(null, newTokens.accessToken);
+
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+          }
+          return api(originalRequest);
+        } else {
+          throw new Error('Token refresh failed');
         }
-
-        const newTokens = await refreshPromise;
-        // console.log(newTokens, '.......................................');
-        await AsyncStorage.setItem('tokens', JSON.stringify(newTokens));
-
-        originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-        return api(originalRequest);
       } catch (refreshError) {
+        processQueue(refreshError, null);
         useAuthStore.getState().logout();
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
