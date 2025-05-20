@@ -7,33 +7,38 @@ import {
   Image,
   ScrollView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft, Camera, MapPin, X } from 'lucide-react-native';
 import { useState } from 'react';
-
 import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/hooks/useData';
-import axios from 'axios';
+import { PostCreateData } from '@/types/post';
 
 export default function NewPost() {
   const [content, setContent] = useState('');
   const [location, setLocation] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  console.log(images, content, location, 'images');
+  const [isLoading, setIsLoading] = useState(false);
 
   const { createPost } = usePosts();
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets[0].uri) {
-      setImages([...images, result.assets[0].uri]);
-      console.log(result.assets[0], 'result');
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setImages([...images, result.assets[0].uri]);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
 
@@ -42,60 +47,57 @@ export default function NewPost() {
   };
 
   const handlePost = async () => {
+    if (!content.trim()) {
+      Alert.alert('Error', 'Please enter some content for your post.');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Create FormData object
-      const formData = new FormData();
-      formData.append('content', content);
-      formData.append('location', location);
+      const postData: PostCreateData = {
+        content: content.trim(),
+        location: location.trim() || undefined,
+        images: images.map((uri, index) => ({
+          uri,
+          type: 'image/jpeg',
+          name: `image_${index}.jpg`,
+        })),
+      };
 
-      // Append images to FormData
-      images.forEach((imageUri, index) => {
-        const fileName = imageUri.split('/').pop();
-        const fileType = fileName?.split('.').pop();
-        formData.append(`images`, {
-          uri: imageUri,
-          name: fileName || `image_${index}.${fileType || 'jpg'}`,
-          type: `image/${fileType || 'jpeg'}`, // Default to 'jpeg' if fileType is undefined
-        });
-      });
-
-      console.log('FormData:', formData);
-
-      // Make API call to create a new post
-      const response = await createPost(formData);
-
-      console.log('Post created:', response);
-
-      // Navigate back after successful post creation
+      await createPost(postData);
       router.back();
     } catch (error) {
-      console.error(
-        'Error creating post:',
-        error.response?.data || error.message
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create post';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Post</Text>
         <TouchableOpacity
-          style={[styles.postButton, !content && styles.postButtonDisabled]}
+          style={[
+            styles.postButton,
+            (!content || isLoading) && styles.postButtonDisabled,
+          ]}
           onPress={handlePost}
-          disabled={!content}
+          disabled={!content || isLoading}
         >
-          <Text
-            style={[
-              styles.postButtonText,
-              !content && styles.postButtonTextDisabled,
-            ]}
-          >
-            Post
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.postButtonText}>Post</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -108,7 +110,9 @@ export default function NewPost() {
             value={content}
             onChangeText={setContent}
             placeholderTextColor="#666"
+            maxLength={1000}
           />
+          <Text style={styles.characterCount}>{content.length}/1000</Text>
         </View>
 
         <View style={styles.locationContainer}>
@@ -143,9 +147,15 @@ export default function NewPost() {
           </ScrollView>
         )}
 
-        <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
+        <TouchableOpacity
+          style={styles.addImageButton}
+          onPress={pickImage}
+          disabled={images.length >= 5}
+        >
           <Camera size={24} color="#00BCD4" />
-          <Text style={styles.addImageText}>Add Photos</Text>
+          <Text style={styles.addImageText}>
+            {images.length >= 5 ? 'Maximum 5 photos' : 'Add Photos'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -166,6 +176,11 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 18,
@@ -173,10 +188,12 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   postButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#00BCD4',
+    minWidth: 80,
+    alignItems: 'center',
   },
   postButtonDisabled: {
     backgroundColor: '#ccc',
@@ -185,9 +202,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'InterSemiBold',
     fontSize: 16,
-  },
-  postButtonTextDisabled: {
-    color: '#fff',
   },
   content: {
     flex: 1,
@@ -202,15 +216,27 @@ const styles = StyleSheet.create({
     color: '#000',
     minHeight: 100,
     textAlignVertical: 'top',
+    padding: 12,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+  },
+  characterCount: {
+    textAlign: 'right',
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: '#eee',
     marginBottom: 16,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
   },
   locationInput: {
     flex: 1,

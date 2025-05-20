@@ -29,6 +29,22 @@ interface RegisterData extends LoginCredentials {
   name: string;
 }
 
+interface TourData {
+  title: string;
+  description: string;
+  locationId: number;
+  price: number;
+  maxSeats: number;
+  startTime: string;
+  endTime: string;
+  status: string;
+  image?: {
+    uri: string;
+    type: string;
+    name: string;
+  };
+}
+
 // Create axios instance
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.165:3000',
@@ -153,6 +169,17 @@ export const NewPost = async (postData: {
   const data = await api.post('/activity', postData);
   return data;
 };
+
+export const NewTour = async (tourData: TourData | FormData) => {
+  const headers =
+    tourData instanceof FormData
+      ? { 'Content-Type': 'multipart/form-data' }
+      : { 'Content-Type': 'application/json' };
+
+  const { data } = await api.post('/tour', tourData, { headers });
+  return data;
+};
+
 export const updatePost = async (
   postId: string,
   postData: {

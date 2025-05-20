@@ -418,11 +418,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#f5f5f5',
-    minWidth: 100,
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   activeFilterButton: {
     backgroundColor: '#00BCD4',
+    borderColor: '#00BCD4',
   },
   filterText: {
     fontSize: 14,

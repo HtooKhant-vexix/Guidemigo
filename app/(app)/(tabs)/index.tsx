@@ -29,7 +29,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/service/auth';
 import { useHosts, usePlaces, useTours } from '@/hooks/useData';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const PLACES = [
   {
@@ -103,6 +103,14 @@ export default function Home() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [displayedTours, setDisplayedTours] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Initialize with first 5 items
+    const initialTours = tours.slice(0, ITEMS_PER_PAGE);
+    setDisplayedTours(initialTours);
+    setHasMore(tours.length > ITEMS_PER_PAGE);
+  }, [tours]);
 
   if (placesLoading || hostsLoading) {
     return (
@@ -140,17 +148,18 @@ export default function Home() {
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
     const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
-    const filteredTours = tours.filter(
-      (tour) =>
-        tour.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tour.location?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const endIndex = startIndex + ITEMS_PER_PAGE;
 
-    if (startIndex >= filteredTours.length) {
-      setHasMore(false);
-    } else {
+    const newTours = tours.slice(startIndex, endIndex);
+
+    if (newTours.length > 0) {
+      setDisplayedTours((prev) => [...prev, ...newTours]);
       setCurrentPage(nextPage);
+      setHasMore(endIndex < tours.length);
+    } else {
+      setHasMore(false);
     }
+
     setIsLoadingMore(false);
   };
 
@@ -247,157 +256,140 @@ export default function Home() {
   );
 
   const renderHostContent = () => {
-    const filteredTours = tours.filter(
+    const filteredTours = displayedTours.filter(
       (tour) =>
         tour.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tour.location?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const paginatedTours = filteredTours.slice(0, currentPage * ITEMS_PER_PAGE);
-
     return (
-      <>
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>My Tours</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => router.push('/tours/create-tour')}
-            >
-              <Plus size={24} color="#00BCD4" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.searchContainer}>
-            <Search size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search tours..."
-              placeholderTextColor="#666"
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                setCurrentPage(1);
-                setHasMore(true);
-              }}
-            />
-          </View>
-
-          {toursLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#00BCD4" />
-            </View>
-          ) : toursError ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{toursError}</Text>
-            </View>
-          ) : filteredTours.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                {searchQuery ? 'No tours found' : 'No tours created yet'}
-              </Text>
-              <Text style={styles.emptyStateSubtext}>
-                {searchQuery
-                  ? 'Try a different search term'
-                  : 'Create your first tour to get started'}
-              </Text>
-            </View>
-          ) : (
-            <>
-              <ScrollView
-                ref={scrollViewRef}
-                style={styles.toursList}
-                showsVerticalScrollIndicator={false}
-                onScroll={handleScroll}
-                scrollEventThrottle={400}
-              >
-                {paginatedTours.map((tour) => (
-                  <TouchableOpacity
-                    key={tour.id}
-                    style={styles.upcomingTourCard}
-                    onPress={() => router.push(`/tours/${tour.id}`)}
-                  >
-                    <View style={styles.tourHeader}>
-                      <View>
-                        <Text style={styles.tourName}>{tour.title}</Text>
-                        <View style={styles.tourLocationContainer}>
-                          <MapPin size={16} color="#00BCD4" />
-                          <Text style={styles.tourLocationText}>
-                            {tour.location?.name || 'No location'}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.dateContainer}>
-                        <Calendar size={16} color="#00BCD4" />
-                        <Text style={styles.dateText}>
-                          {tour?.startTime?.slice(0, 10)}
-                        </Text>
-                        <Text style={styles.timeText}>
-                          {tour?.startTime?.slice(11, 16)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.tourGuide}>
-                      <Image
-                        source={{
-                          uri:
-                            tour.host?.profile?.image ||
-                            'https://images.unsplash.com/photo-1565967511849-76a60a516170',
-                        }}
-                        style={styles.guideImage}
-                      />
-                      <View style={styles.guideInfo}>
-                        <Text style={styles.guideName}>
-                          {tour.host?.profile?.name || 'Unknown Host'}
-                        </Text>
-                        <View style={styles.guideStats}>
-                          <Star size={16} color="#FFD700" />
-                          <Text style={styles.ratingText}>
-                            {tour.host?.profile?.rating || 0}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.participantsContainer}>
-                        <Users size={16} color="#00BCD4" />
-                        <Text style={styles.participantsText}>
-                          {tour._count?.booking || 0} joined
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-                {isLoadingMore && (
-                  <View style={styles.loadingMoreContainer}>
-                    <ActivityIndicator size="small" color="#00BCD4" />
-                  </View>
-                )}
-                {!hasMore && paginatedTours.length > 0 && (
-                  <Text style={styles.endOfListText}>
-                    No more tours to load
-                  </Text>
-                )}
-              </ScrollView>
-
-              {currentPage > 1 && (
-                <TouchableOpacity
-                  style={styles.goToTopButton}
-                  onPress={() =>
-                    scrollViewRef.current?.scrollTo({ y: 0, animated: true })
-                  }
-                >
-                  <Text style={styles.goToTopButtonText}>↑</Text>
-                </TouchableOpacity>
-              )}
-            </>
-          )}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>My Tours</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/tours/create-tour')}
+          >
+            <Plus size={24} color="#00BCD4" />
+          </TouchableOpacity>
         </View>
-      </>
+
+        <View style={styles.searchContainer}>
+          <Search size={20} color="#666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search tours..."
+            placeholderTextColor="#666"
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              setCurrentPage(1);
+              setDisplayedTours(tours.slice(0, ITEMS_PER_PAGE));
+              setHasMore(tours.length > ITEMS_PER_PAGE);
+            }}
+          />
+        </View>
+
+        {toursLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#00BCD4" />
+          </View>
+        ) : toursError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{toursError}</Text>
+          </View>
+        ) : filteredTours.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              {searchQuery ? 'No tours found' : 'No tours created yet'}
+            </Text>
+            <Text style={styles.emptyStateSubtext}>
+              {searchQuery
+                ? 'Try a different search term'
+                : 'Create your first tour to get started'}
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.toursList}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={400}
+            contentContainerStyle={styles.toursListContent}
+          >
+            {filteredTours.map((tour) => (
+              <TouchableOpacity
+                key={tour.id}
+                style={styles.upcomingTourCard}
+                onPress={() => router.push(`/tours/${tour.id}`)}
+              >
+                <View style={styles.tourHeader}>
+                  <View>
+                    <Text style={styles.tourName}>{tour.title}</Text>
+                    <View style={styles.tourLocationContainer}>
+                      <MapPin size={16} color="#00BCD4" />
+                      <Text style={styles.tourLocationText}>
+                        {tour.location?.name || 'No location'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.dateContainer}>
+                    <Calendar size={16} color="#00BCD4" />
+                    <Text style={styles.dateText}>
+                      {tour?.startTime?.slice(0, 10)}
+                    </Text>
+                    <Text style={styles.timeText}>
+                      {tour?.startTime?.slice(11, 16)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.tourGuide}>
+                  <Image
+                    source={{
+                      uri:
+                        tour.host?.profile?.image ||
+                        'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                    }}
+                    style={styles.guideImage}
+                  />
+                  <View style={styles.guideInfo}>
+                    <Text style={styles.guideName}>
+                      {tour.host?.profile?.name || 'Unknown Host'}
+                    </Text>
+                    <View style={styles.guideStats}>
+                      <Star size={16} color="#FFD700" />
+                      <Text style={styles.ratingText}>
+                        {tour.host?.profile?.rating || 0}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.participantsContainer}>
+                    <Users size={16} color="#00BCD4" />
+                    <Text style={styles.participantsText}>
+                      {tour._count?.booking || 0} joined
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {isLoadingMore && (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size="small" color="#00BCD4" />
+              </View>
+            )}
+            {!hasMore && filteredTours.length > 0 && (
+              <Text style={styles.endOfListText}>No more tours to load</Text>
+            )}
+          </ScrollView>
+        )}
+      </View>
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.bg}>
         <View style={styles.header}>
           <View style={styles.locationContainer}>
@@ -477,10 +469,14 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      {selectedRole === 'traveler'
-        ? renderTravelerContent()
-        : renderHostContent()}
-    </ScrollView>
+      {selectedRole === 'traveler' ? (
+        <ScrollView style={styles.contentContainer}>
+          {renderTravelerContent()}
+        </ScrollView>
+      ) : (
+        <View style={styles.contentContainer}>{renderHostContent()}</View>
+      )}
+    </View>
   );
 }
 
@@ -488,6 +484,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -629,6 +628,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   section: {
+    marginTop: -10,
     padding: 16,
     flex: 1,
   },
@@ -916,8 +916,11 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   toursList: {
+    marginTop: 16,
     flex: 1,
-    marginTop: 20,
+  },
+  toursListContent: {
+    paddingBottom: 20,
   },
   loadingMoreContainer: {
     paddingVertical: 20,
