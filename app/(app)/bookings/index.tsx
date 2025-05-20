@@ -118,9 +118,7 @@ export default function Bookings() {
   const filteredBookings = tours
     .map((tour) => ({
       ...tour,
-      status: (new Date(tour.startTime) > new Date()
-        ? 'upcoming'
-        : 'completed') as BookingStatus,
+      status: tour.status === 'AVAILABLE' ? 'upcoming' : 'completed',
     }))
     .filter((booking) => {
       if (activeFilter === 'all') return true;
@@ -143,7 +141,7 @@ export default function Bookings() {
       <Image
         source={{
           uri:
-            booking.images?.[0] ||
+            booking.location.image ||
             'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
         }}
         style={[
@@ -204,7 +202,7 @@ export default function Bookings() {
                 booking.status === 'completed' && styles.completedText,
               ]}
             >
-              {booking.location?.name}
+              {booking.location.name}
             </Text>
           </View>
 
@@ -219,7 +217,7 @@ export default function Bookings() {
                 booking.status === 'completed' && styles.completedText,
               ]}
             >
-              {booking._count.booking} Participants
+              {booking._count.booking}/{booking.maxSeats} Participants
             </Text>
           </View>
         </View>
@@ -227,7 +225,11 @@ export default function Bookings() {
         <View style={styles.bookingFooter}>
           <View style={styles.guideInfo}>
             <Image
-              source={{ uri: booking.host?.profile.image }}
+              source={{
+                uri:
+                  booking.host.profile?.image ||
+                  'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+              }}
               style={[
                 styles.guideAvatar,
                 booking.status === 'completed' && styles.completedImage,
@@ -239,7 +241,7 @@ export default function Bookings() {
                 booking.status === 'completed' && styles.completedText,
               ]}
             >
-              {booking.host?.profile.name}
+              {booking.host.profile?.name || booking.host.email}
             </Text>
           </View>
           <View style={styles.priceContainer}>
@@ -313,9 +315,11 @@ export default function Bookings() {
             </TouchableOpacity>
           ))}
         </View>
-        {[1, 2, 3].map((_, index) => (
-          <SkeletonBookingCard key={index} />
-        ))}
+        <View style={styles.bookingsContainer}>
+          {[1, 2, 3].map((_, index) => (
+            <SkeletonBookingCard key={index} />
+          ))}
+        </View>
       </View>
     );
   }
