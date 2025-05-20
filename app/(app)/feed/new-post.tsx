@@ -57,11 +57,14 @@ export default function NewPost() {
       const postData: PostCreateData = {
         content: content.trim(),
         location: location.trim() || undefined,
-        images: images.map((uri, index) => ({
-          uri,
-          type: 'image/jpeg',
-          name: `image_${index}.jpg`,
-        })),
+        images:
+          images.length > 0
+            ? images.map((uri) => ({
+                uri,
+                type: 'image/jpeg',
+                name: `image_${Date.now()}.jpg`,
+              }))
+            : undefined,
       };
 
       await createPost(postData);

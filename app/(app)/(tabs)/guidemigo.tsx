@@ -73,7 +73,7 @@ const RECOMMENDED_TOURS = [
 
 export default function Guidemigo() {
   const { hosts, loading: userLoading, error: userErr } = useHosts();
-  const { tours, loading, error } = useTours();
+  const { tours, loading, error } = useTours('available');
   // console.log(hosts, '......hosts');
   console.log(tours, '......tours');
 

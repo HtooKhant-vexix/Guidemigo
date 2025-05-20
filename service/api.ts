@@ -182,13 +182,24 @@ export const fetchPosts = async () => {
   return data;
 };
 
-export const NewPost = async (postData: {
-  content: string;
-  location?: string;
-  images?: string[];
-}) => {
-  const data = await api.post('/activity', postData);
-  return data;
+export const NewPost = async (
+  postData:
+    | FormData
+    | {
+        content: string;
+        location?: string;
+        images?: string[];
+      }
+) => {
+  const response = await api.post('/activity', postData, {
+    headers: {
+      'Content-Type':
+        postData instanceof FormData
+          ? 'multipart/form-data'
+          : 'application/json',
+    },
+  });
+  return response.data;
 };
 
 export const NewTour = async (tourData: TourData | FormData) => {

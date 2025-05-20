@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Host, Place, Post } from '../types/api';
+import { Alert } from 'react-native';
+import { router } from 'expo-router';
 import {
   fetchHosts,
   fetchHost,
@@ -216,14 +218,41 @@ export function usePosts() {
   const createPost = async (postData: {
     content: string;
     location?: string;
-    images?: Array<Record<string, any>> | undefined;
+    images?: Array<{
+      uri: string;
+      type: string;
+      name: string;
+    }>;
   }) => {
     try {
-      const newPost = await NewPost(postData);
-      console.log(newPost, 'newPost');
-      setPosts([newPost, ...posts]);
+      const formData = new FormData();
+      formData.append('content', postData.content);
+      if (postData.location) {
+        formData.append('location', postData.location);
+      }
+
+      if (postData.images && postData.images.length > 0) {
+        postData.images.forEach((image, index) => {
+          if (image.uri.startsWith('file://')) {
+            formData.append('images', {
+              uri: image.uri,
+              type: image.type,
+              name: image.name,
+            } as any);
+          }
+        });
+      }
+
+      const { data } = await NewPost(formData);
+      console.log(data, 'new post');
+      if (data) {
+        setPosts([data as Post, ...posts]);
+        Alert.alert('Success', 'Post created successfully');
+        router.back();
+      }
     } catch (err) {
       console.error('Error creating post:', err);
+      throw err;
     }
   };
 
