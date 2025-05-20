@@ -265,7 +265,7 @@ export default function Home() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Tours</Text>
+          <Text style={styles.sectionTitle}>Tours</Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push('/tours/create-tour')}

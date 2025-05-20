@@ -45,6 +45,24 @@ interface TourData {
   };
 }
 
+interface ProfileResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    id: number;
+    name: string;
+    email: string;
+    phonenumber?: string;
+    bio?: string;
+    image?: string;
+    type?: string;
+    dob?: string;
+    expertise?: string[];
+    experience?: string;
+    address?: string;
+  };
+}
+
 // Create axios instance
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.165:3000',
@@ -249,6 +267,23 @@ export const fetchHosts = async () => {
 export const fetchHost = async (id: string) => {
   const { data } = await api.get(`/user/profile/${id}`);
   return data;
+};
+
+// User Profile API
+export const fetchUserProfile = async (
+  userId: number,
+  accessToken: string
+): Promise<ProfileResponse> => {
+  const response = await api.get<ProfileResponse>(
+    `/user/profile?id=${userId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return response.data;
 };
 
 // Axios interceptors
