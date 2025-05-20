@@ -52,22 +52,174 @@ const api = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{
+// Enhanced types for better type safety
+interface TokenRefreshResponse {
+  success: boolean;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    user: User;
+  };
+}
+
+interface QueuedRequest {
   resolve: (value?: unknown) => void;
   reject: (reason?: any) => void;
-}> = [];
+  config: any;
+}
 
-const processQueue = (error: any = null, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+// Constants for better maintainability
+const TOKEN_STORAGE_KEY = 'tokens';
+const REFRESH_ENDPOINT = '/auth/refresh-token';
+const MAX_RETRIES = 1;
+
+// Enhanced queue management
+class TokenRefreshQueue {
+  private queue: QueuedRequest[] = [];
+  private isRefreshing: boolean = false;
+
+  add(request: QueuedRequest) {
+    this.queue.push(request);
+  }
+
+  clear() {
+    this.queue = [];
+  }
+
+  process(error: any = null, token: string | null = null) {
+    this.queue.forEach(({ resolve, reject, config }) => {
+      if (error) {
+        reject(error);
+      } else {
+        if (config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        resolve(api(config));
+      }
+    });
+    this.clear();
+  }
+
+  setRefreshing(status: boolean) {
+    this.isRefreshing = status;
+  }
+
+  getRefreshing() {
+    return this.isRefreshing;
+  }
+}
+
+const refreshQueue = new TokenRefreshQueue();
+
+// Enhanced token management
+const tokenManager = {
+  async getTokens(): Promise<AuthTokens | null> {
+    try {
+      const tokens = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+      return tokens ? JSON.parse(tokens) : null;
+    } catch (error) {
+      console.error('Error getting tokens:', error);
+      return null;
     }
-  });
-  failedQueue = [];
+  },
+
+  async setTokens(tokens: AuthTokens): Promise<void> {
+    try {
+      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+    } catch (error) {
+      console.error('Error setting tokens:', error);
+      throw error;
+    }
+  },
+
+  async clearTokens(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+    } catch (error) {
+      console.error('Error clearing tokens:', error);
+      throw error;
+    }
+  },
 };
+
+// Enhanced request interceptor
+api.interceptors.request.use(
+  async (config) => {
+    try {
+      const tokens = await tokenManager.getTokens();
+      if (tokens?.accessToken && config.headers) {
+        config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+      }
+      return config;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  },
+  (error) => Promise.reject(error)
+);
+
+// Enhanced response interceptor with better error handling
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle non-401 errors or already retried requests
+    if (
+      !originalRequest ||
+      error.response?.status !== 401 ||
+      originalRequest._retry
+    ) {
+      return Promise.reject(error);
+    }
+
+    // Handle token refresh
+    if (refreshQueue.getRefreshing()) {
+      return new Promise((resolve, reject) => {
+        refreshQueue.add({ resolve, reject, config: originalRequest });
+      });
+    }
+
+    originalRequest._retry = true;
+    refreshQueue.setRefreshing(true);
+
+    try {
+      const tokens = await tokenManager.getTokens();
+      if (!tokens?.refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const { data } = await api.post<TokenRefreshResponse>(REFRESH_ENDPOINT, {
+        refreshToken: tokens.refreshToken,
+      });
+
+      if (!data.success) {
+        throw new Error('Token refresh failed');
+      }
+
+      const newTokens = {
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+      };
+
+      await tokenManager.setTokens(newTokens);
+      refreshQueue.process(null, newTokens.accessToken);
+
+      // Update the original request with new token
+      if (originalRequest.headers) {
+        originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+      }
+
+      return api(originalRequest);
+    } catch (refreshError) {
+      refreshQueue.process(refreshError, null);
+      await useAuthStore.getState().logout();
+      return Promise.reject(refreshError);
+    } finally {
+      refreshQueue.setRefreshing(false);
+    }
+  }
+);
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -80,14 +232,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async (tokens: AuthTokens) => {
     try {
       set({ isLoading: true });
+      await tokenManager.setTokens(tokens);
       const response = await api.post<AuthResponse>(
-        '/auth/refresh-token',
+        REFRESH_ENDPOINT,
         { refreshToken: tokens.refreshToken },
         { headers: { Authorization: `Bearer ${tokens.accessToken}` } }
       );
 
       if (response.data.success) {
-        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
         set({
           user: response.data.data.user,
           isAuthenticated: true,
@@ -100,7 +252,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error) {
       set({ isLoading: false });
-      await AsyncStorage.removeItem('tokens');
+      await tokenManager.clearTokens();
       throw error;
     }
   },
@@ -116,7 +268,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           refreshToken: data.data.refreshToken,
         };
 
-        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
+        await tokenManager.setTokens(tokens);
         set({
           user: data.data.user,
           accessToken: tokens.accessToken,
@@ -223,7 +375,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      await AsyncStorage.removeItem('tokens');
+      await tokenManager.clearTokens();
       set({
         user: null,
         accessToken: null,
@@ -239,82 +391,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
-
-// Request interceptor
-api.interceptors.request.use(
-  async (config) => {
-    const tokens = await AsyncStorage.getItem('tokens');
-    if (tokens) {
-      const { accessToken } = JSON.parse(tokens) as AuthTokens;
-      if (config.headers) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (!originalRequest) return Promise.reject(error);
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const tokens = await AsyncStorage.getItem('tokens');
-        if (!tokens) throw new Error('No refresh token available');
-
-        const { refreshToken } = JSON.parse(tokens) as AuthTokens;
-        const { data } = await api.post<AuthResponse>('/auth/refresh-token', {
-          refreshToken,
-        });
-
-        if (data.success) {
-          const newTokens = {
-            accessToken: data.data.accessToken,
-            refreshToken: data.data.refreshToken,
-          };
-
-          await AsyncStorage.setItem('tokens', JSON.stringify(newTokens));
-          processQueue(null, newTokens.accessToken);
-
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-          }
-          return api(originalRequest);
-        } else {
-          throw new Error('Token refresh failed');
-        }
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        useAuthStore.getState().logout();
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);
 
 export default api;
