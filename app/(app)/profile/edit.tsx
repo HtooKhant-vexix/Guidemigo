@@ -49,6 +49,26 @@ const EXPERTISE_OPTIONS = [
   'Event Planning',
 ];
 
+const LANGUAGES = [
+  'English',
+  'Mandarin',
+  'Malay',
+  'Tamil',
+  'Japanese',
+  'Korean',
+  'Hindi',
+  'French',
+  'Spanish',
+  'German',
+];
+
+const GENDER_OPTIONS = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+  { label: 'Non-binary', value: 'non-binary' },
+  { label: 'Prefer not to say', value: 'not-specified' },
+];
+
 const PROFILE_TYPES = [
   { label: 'Host', value: 'host' },
   { label: 'Traveller', value: 'traveller' },
@@ -61,6 +81,8 @@ export default function EditProfile() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showExpertiseModal, setShowExpertiseModal] = useState(false);
   const [showTypeModal, setShowTypeModal] = useState(false);
+  const [showLanguagesModal, setShowLanguagesModal] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -72,7 +94,11 @@ export default function EditProfile() {
     expertise: [] as string[],
     experience: '',
     location: '',
+    languages: [] as string[],
+    gender: '',
   });
+
+  console.log(profile, '..');
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -94,7 +120,9 @@ export default function EditProfile() {
             dob: profileData.dob || '',
             expertise: profileData.expertise?.map((e: any) => e.name) || [],
             experience: profileData.experience || '',
-            location: profileData.address || '',
+            location: profileData.location || '',
+            languages: profileData.languages || [],
+            gender: profileData.gender || '',
           });
         } else {
           throw new Error(response.message || 'Failed to load profile');
@@ -157,6 +185,15 @@ export default function EditProfile() {
     }
   };
 
+  const toggleLanguage = (language: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      languages: prev.languages.includes(language)
+        ? prev.languages.filter((l) => l !== language)
+        : [...prev.languages, language],
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setIsLoading(true);
@@ -167,11 +204,18 @@ export default function EditProfile() {
       formData.append('type', profile.type);
       formData.append('dob', profile.dob);
       formData.append('experience', profile.experience);
-      formData.append('address', profile.location);
+      formData.append('location', profile.location);
+      formData.append('gender', profile.gender);
 
       if (profile.expertise.length > 0) {
         profile.expertise.forEach((exp) => {
           formData.append('expertise[]', exp);
+        });
+      }
+
+      if (profile.languages.length > 0) {
+        profile.languages.forEach((lang) => {
+          formData.append('languages[]', lang);
         });
       }
 
@@ -234,13 +278,7 @@ export default function EditProfile() {
           <ArrowLeft size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave} disabled={isLoading}>
-          {isLoading ? (
-            <ActivityIndicator color="#00BCD4" />
-          ) : (
-            <Text style={styles.saveButton}>Save</Text>
-          )}
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.profileImageContainer}>
@@ -457,6 +495,114 @@ export default function EditProfile() {
         </View>
 
         <View style={styles.inputGroup}>
+          <Text style={styles.label}>Gender</Text>
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setShowGenderModal(!showGenderModal)}
+            disabled={isLoading}
+          >
+            <View style={styles.languageSelector}>
+              <Text
+                style={[
+                  styles.languageText,
+                  profile.gender && styles.selectedText,
+                ]}
+              >
+                {profile.gender
+                  ? GENDER_OPTIONS.find((g) => g.value === profile.gender)
+                      ?.label
+                  : 'Select gender'}
+              </Text>
+              <ChevronDown size={20} color="#666" />
+            </View>
+          </TouchableOpacity>
+          {showGenderModal && (
+            <ScrollView
+              style={styles.languageDropdown}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+            >
+              {GENDER_OPTIONS.map((gender) => (
+                <TouchableOpacity
+                  key={gender.value}
+                  style={[
+                    styles.languageOption,
+                    profile.gender === gender.value &&
+                      styles.selectedLanguageOption,
+                  ]}
+                  onPress={() => {
+                    setProfile((prev) => ({ ...prev, gender: gender.value }));
+                    setShowGenderModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.languageOptionText,
+                      profile.gender === gender.value &&
+                        styles.selectedLanguageOptionText,
+                    ]}
+                  >
+                    {gender.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Languages</Text>
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setShowLanguagesModal(!showLanguagesModal)}
+            disabled={isLoading}
+          >
+            <View style={styles.languageSelector}>
+              <Text
+                style={[
+                  styles.languageText,
+                  profile.languages.length > 0 && styles.selectedText,
+                ]}
+              >
+                {profile.languages.length > 0
+                  ? profile.languages.join(', ')
+                  : 'Select languages'}
+              </Text>
+              <ChevronDown size={20} color="#666" />
+            </View>
+          </TouchableOpacity>
+          {showLanguagesModal && (
+            <ScrollView
+              style={styles.languageDropdown}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+            >
+              {LANGUAGES.map((language) => (
+                <TouchableOpacity
+                  key={language}
+                  style={[
+                    styles.languageOption,
+                    profile.languages.includes(language) &&
+                      styles.selectedLanguageOption,
+                  ]}
+                  onPress={() => toggleLanguage(language)}
+                >
+                  <Text
+                    style={[
+                      styles.languageOptionText,
+                      profile.languages.includes(language) &&
+                        styles.selectedLanguageOptionText,
+                    ]}
+                  >
+                    {language}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        <View style={styles.inputGroup}>
           <Text style={styles.label}>Bio</Text>
           <TextInput
             style={[styles.input, styles.bioInput]}
@@ -468,6 +614,18 @@ export default function EditProfile() {
             editable={!isLoading}
           />
         </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          )}
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -497,9 +655,20 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   saveButton: {
+    backgroundColor: '#00BCD4',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 32,
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
+  },
+  saveButtonText: {
     fontSize: 16,
     fontFamily: 'InterSemiBold',
-    color: '#00BCD4',
+    color: '#fff',
   },
   profileImageContainer: {
     alignItems: 'center',

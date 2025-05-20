@@ -7,6 +7,7 @@ import {
   Switch,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -25,13 +26,39 @@ import {
   Bookmark,
   History,
 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useAuthStore } from '../../../service/auth';
+import { fetchUserProfile } from '../../../service/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function More() {
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const { logout } = useAuth();
+  const { user, accessToken } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const [profileData, setProfileData] = useState<any>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.id || !accessToken) return;
+
+      try {
+        setIsLoading(true);
+        const response = await fetchUserProfile(user.id, accessToken);
+        if (response.success) {
+          setProfileData(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user?.id, accessToken]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -147,18 +174,30 @@ export default function More() {
       </View>
 
       <View style={styles.profileSection}>
-        <Image
-          source={require('../../../assets/images/icon.png')}
-          style={styles.profileImage}
-        />
-        <Text style={styles.profileName}>Htoo Aung Khant</Text>
-        <Text style={styles.profileEmail}>demo@example.com</Text>
-        <TouchableOpacity
-          style={styles.editProfileButton}
-          onPress={() => router.push('/profile/edit')}
-        >
-          <Text style={styles.editProfileText}>Edit Profile</Text>
-        </TouchableOpacity>
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#00BCD4" />
+        ) : (
+          <>
+            <Image
+              source={
+                profileData?.image
+                  ? { uri: profileData.image }
+                  : require('../../../assets/images/icon.png')
+              }
+              style={styles.profileImage}
+            />
+            <Text style={styles.profileName}>
+              {profileData?.name || user?.name}
+            </Text>
+            <Text style={styles.profileEmail}>{user?.email}</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => router.push('../profile/edit')}
+            >
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {menuSections.map((section, sectionIndex) => (
@@ -235,13 +274,13 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
   },
-  editProfileButton: {
+  editButton: {
     paddingHorizontal: 20,
     paddingVertical: 8,
     backgroundColor: '#00BCD4',
     borderRadius: 20,
   },
-  editProfileText: {
+  editButtonText: {
     color: '#fff',
     fontSize: 14,
     fontFamily: 'InterSemiBold',

@@ -47,8 +47,9 @@ interface TourData {
 
 interface ProfileResponse {
   success: boolean;
-  message?: string;
+  message: string;
   data: {
+    location: string;
     id: number;
     name: string;
     email: string;
@@ -60,6 +61,8 @@ interface ProfileResponse {
     expertise?: string[];
     experience?: string;
     address?: string;
+    languages?: string[];
+    gender?: string;
   };
 }
 
