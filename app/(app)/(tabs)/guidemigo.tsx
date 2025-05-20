@@ -73,8 +73,7 @@ const RECOMMENDED_TOURS = [
 
 export default function Guidemigo() {
   const { hosts, loading: userLoading, error: userErr } = useHosts();
-  const { tours, loading, error } = useTours('available');
-  // console.log(hosts, '......hosts');
+  const { tours, loading, error } = useTours('AVAILABLE');
   console.log(tours, '......tours');
 
   if (loading) {
@@ -94,22 +93,6 @@ export default function Guidemigo() {
       </View>
     );
   }
-
-  // const upcomingTours = hosts?.slice(0, 2).map((host) => ({
-  //   id: host.id,
-  //   name: `Tour with ${host.name}`,
-  //   date: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000)
-  //     .toISOString()
-  //     .split('T')[0],
-  //   time: '09:00 AM',
-  //   location: 'Singapore',
-  //   guide: {
-  //     name: host.name,
-  //     image: host.image,
-  //     rating: host.rating,
-  //   },
-  //   participants: Math.floor(Math.random() * 8) + 2,
-  // }));
 
   return (
     <ScrollView style={styles.container}>
@@ -141,10 +124,13 @@ export default function Guidemigo() {
               <View style={styles.dateContainer}>
                 <Calendar size={16} color="#00BCD4" />
                 <Text style={styles.dateText}>
-                  {tour?.startTime?.slice(0, 10)}
+                  {new Date(tour.startTime).toLocaleDateString()}
                 </Text>
                 <Text style={styles.timeText}>
-                  {tour?.startTime?.slice(11, 16)}
+                  {new Date(tour.startTime).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </Text>
               </View>
             </View>
@@ -152,25 +138,27 @@ export default function Guidemigo() {
             <View style={styles.tourGuide}>
               <Image
                 source={{
-                  uri: tour.host.profile.image
-                    ? tour.host.profile.image
-                    : 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                  uri:
+                    tour.host.profile?.image ||
+                    'https://images.unsplash.com/photo-1565967511849-76a60a516170',
                 }}
                 style={styles.guideImage}
               />
               <View style={styles.guideInfo}>
-                <Text style={styles.guideName}>{tour.host.profile.name}</Text>
+                <Text style={styles.guideName}>
+                  {tour.host.profile?.name || tour.host.email}
+                </Text>
                 <View style={styles.guideStats}>
                   <Star size={16} color="#FFD700" />
                   <Text style={styles.ratingText}>
-                    {tour.host.profile.rating || 0}
+                    {tour.host.profile?.rating || 0}
                   </Text>
                 </View>
               </View>
               <View style={styles.participantsContainer}>
                 <Users size={16} color="#00BCD4" />
                 <Text style={styles.participantsText}>
-                  {tour._count.booking} joined
+                  {tour._count.booking}/{tour.maxSeats} joined
                 </Text>
               </View>
             </View>
@@ -198,9 +186,9 @@ export default function Guidemigo() {
             >
               <Image
                 source={{
-                  uri: tour.host.profile.image
-                    ? tour.host.profile.image
-                    : 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                  uri:
+                    tour.location.image ||
+                    'https://images.unsplash.com/photo-1565967511849-76a60a516170',
                 }}
                 style={styles.recommendedImage}
               />
@@ -210,13 +198,17 @@ export default function Guidemigo() {
                 <View style={styles.recommendedStats}>
                   <View style={styles.stat}>
                     <Calendar size={14} color="#666" />
-                    <Text style={styles.statText}>2:00</Text>
+                    <Text style={styles.statText}>
+                      {new Date(tour.startTime).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
                   </View>
                   <View style={styles.stat}>
                     <Star size={14} color="#FFD700" />
                     <Text style={styles.statText}>
-                      {tour.host.profile.rating || 0}
-                      {/* ({tour.reviews}) */}
+                      {tour.host.profile?.rating || 0}
                     </Text>
                   </View>
                 </View>

@@ -246,8 +246,9 @@ export const updateComment = async (
   return data;
 };
 
-export const fetchTours = async () => {
-  const { data } = await api.get('/tour/all/tours');
+export const fetchTours = async (status?: string) => {
+  const endpoint = status ? `/tour/status/${status}` : '/tour/all/tours';
+  const { data } = await api.get(endpoint);
   console.log(data, 'this is data from service');
   return data;
 };

@@ -48,29 +48,40 @@ export interface Place {
 }
 
 export interface Post {
-  id: string;
+  id: number;
   title: string;
-  content: string;
+  description: string;
+  price: string;
   startTime: string;
-  location: {
-    name: string;
-  };
+  endTime: string;
+  maxSeats: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  hostId: number;
+  locationId: number;
   host: {
-    profile: {
+    id: number;
+    email: string;
+    profile?: {
       name: string;
       image: string;
       rating: number;
     };
   };
+  location: {
+    id: number;
+    name: string;
+    image: string;
+    description: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    highlights: string[];
+  };
   _count: {
     booking: number;
   };
-  price: number;
-  images: string[];
-  likes: number;
-  comments: number;
-  created_at: string;
-  isLiked: boolean;
 }
 
 export interface Review {

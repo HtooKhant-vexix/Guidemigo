@@ -259,7 +259,7 @@ export function usePosts() {
   return { posts, loading, createPost, error, handleLike };
 }
 
-export function useTours() {
+export function useTours(status?: string) {
   const [tours, setTours] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -267,8 +267,7 @@ export function useTours() {
   useEffect(() => {
     async function loadPosts() {
       try {
-        const data = await fetchTours();
-        // console.error('Fetched posts:', data.data[0]);
+        const data = await fetchTours(status);
         setTours(data.data);
         setError(null);
       } catch (err) {
@@ -280,10 +279,11 @@ export function useTours() {
     }
 
     loadPosts();
-  }, []);
+  }, [status]);
 
   return { tours, loading, error };
 }
+
 export function useTour(id: number) {
   const [tour, setTour] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
