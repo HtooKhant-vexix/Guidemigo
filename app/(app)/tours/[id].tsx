@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react-native';
 import { useTour } from '@/hooks/useData';
 import { useState } from 'react';
+import { SkeletonHostCard } from '@/components/SkeletonHostCard';
 
 const TOURS = {
   '1': {
@@ -119,8 +121,6 @@ const TOURS = {
 
 export default function TourDetail() {
   const { id } = useLocalSearchParams();
-  console.log(id);
-  const mockTour = TOURS[id as keyof typeof TOURS];
   const { tour, loading, error } = useTour(Number(id));
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState({
@@ -133,7 +133,6 @@ export default function TourDetail() {
   });
 
   const handlePayment = () => {
-    // Here you would typically make an API call to process the payment
     setShowPaymentModal(false);
     Alert.alert(
       'Booking Confirmed!',
@@ -284,10 +283,43 @@ export default function TourDetail() {
     </Modal>
   );
 
-  if (tour.length < 1) {
+  if (loading) {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.imageSlider}>
+            <SkeletonHostCard />
+          </View>
+        </View>
+        <View style={styles.content}>
+          <SkeletonHostCard />
+          <SkeletonHostCard />
+          <SkeletonHostCard />
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (error || !tour) {
     return (
       <View style={styles.container}>
-        <Text>Tour not found</Text>
+        <Text style={styles.errorText}>Tour not found</Text>
+      </View>
+    );
+  }
+
+  if (tour.status !== 'AVAILABLE') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>
+          This tour is not available for booking
+        </Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -301,13 +333,7 @@ export default function TourDetail() {
           showsHorizontalScrollIndicator={false}
           style={styles.imageSlider}
         >
-          {/* {mockTour.images.map((image, index) => ( */}
-          <Image
-            // key={index}
-            source={{ uri: tour.location.image }}
-            style={styles.image}
-          />
-          {/* ))} */}
+          <Image source={{ uri: tour.location.image }} style={styles.image} />
         </ScrollView>
         <TouchableOpacity
           style={styles.backButton}
@@ -323,23 +349,20 @@ export default function TourDetail() {
         <View style={styles.guideContainer}>
           <Image
             source={{
-              uri: tour.host.profile.image
-                ? tour.host.profile.image
-                : 'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
+              uri:
+                tour.host.profile?.image ||
+                'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
             }}
             style={styles.guideImage}
           />
           <View style={styles.guideInfo}>
             <Text style={styles.guideName}>
-              Guide: {tour.host.profile.name}
+              Guide: {tour.host.profile?.name || tour.host.email}
             </Text>
             <View style={styles.guideStats}>
               <Star size={16} color="#FFD700" />
               <Text style={styles.guideRating}>
-                {tour.host.profile.rating || 0}
-              </Text>
-              <Text style={styles.guideReviews}>
-                {/* ({tour.guide.reviews} reviews) */}
+                {tour.host.profile?.rating || 0}
               </Text>
             </View>
           </View>
@@ -351,10 +374,13 @@ export default function TourDetail() {
             <View>
               <Text style={styles.infoLabel}>Date</Text>
               <Text style={styles.infoValue}>
-                {tour.startTime.slice(0, 10)}
+                {new Date(tour.startTime).toLocaleDateString()}
               </Text>
               <Text style={styles.infoValue}>
-                {tour.startTime.slice(11, 16)}
+                {new Date(tour.startTime).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </Text>
             </View>
           </View>
@@ -363,7 +389,14 @@ export default function TourDetail() {
             <Clock size={20} color="#00BCD4" />
             <View>
               <Text style={styles.infoLabel}>Duration</Text>
-              <Text style={styles.infoValue}>2:00</Text>
+              <Text style={styles.infoValue}>
+                {Math.round(
+                  (new Date(tour.endTime).getTime() -
+                    new Date(tour.startTime).getTime()) /
+                    (1000 * 60 * 60)
+                )}{' '}
+                hours
+              </Text>
             </View>
           </View>
 
@@ -400,24 +433,6 @@ export default function TourDetail() {
             </View>
           ))}
         </View>
-
-        {/* <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What's Included</Text>
-          {tour.includes.map((item, index) => (
-            <View key={index} style={styles.includeItem}>
-              <View style={styles.bullet} />
-              <Text style={styles.includeText}>{item}</Text>
-            </View>
-          ))}
-        </View> */}
-
-        {/* <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Meeting Point</Text>
-          <Text style={styles.meetingPointName}>{tour.meetingPoint.name}</Text>
-          <Text style={styles.meetingPointDetails}>
-            {tour.meetingPoint.details}
-          </Text>
-        </View> */}
 
         <View style={styles.footer}>
           <View style={styles.priceContainer}>
@@ -511,11 +526,6 @@ const styles = StyleSheet.create({
     fontFamily: 'InterSemiBold',
     color: '#000',
   },
-  guideReviews: {
-    fontSize: 14,
-    fontFamily: 'Inter',
-    color: '#666',
-  },
   infoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -574,28 +584,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter',
     color: '#444',
-  },
-  includeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  includeText: {
-    fontSize: 16,
-    fontFamily: 'Inter',
-    color: '#444',
-  },
-  meetingPointName: {
-    fontSize: 16,
-    fontFamily: 'InterSemiBold',
-    color: '#000',
-    marginBottom: 4,
-  },
-  meetingPointDetails: {
-    fontSize: 14,
-    fontFamily: 'Inter',
-    color: '#666',
   },
   footer: {
     flexDirection: 'row',
@@ -694,5 +682,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'InterSemiBold',
     color: '#fff',
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    color: '#ff0000',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
+    color: '#00BCD4',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

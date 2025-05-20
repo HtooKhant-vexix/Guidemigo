@@ -285,29 +285,26 @@ export function useTours(status?: string) {
 }
 
 export function useTour(id: number) {
-  const [tour, setTour] = useState<Post[]>([]);
+  const [tour, setTour] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadPosts() {
+    async function loadTour() {
       try {
-        console.log('load');
         const data = await fetchTour(id);
-        console.log(data.data, 'thiioshofhaoihfo');
-        // console.error('Fetched posts:', data.data[0]);
         setTour(data.data);
         setError(null);
       } catch (err) {
-        setError('Failed to load posts');
-        console.error('Error loading posts:', err);
+        setError('Failed to load tour details');
+        console.error('Error loading tour:', err);
       } finally {
         setLoading(false);
       }
     }
 
-    loadPosts();
-  }, []);
+    loadTour();
+  }, [id]);
 
   return { tour, loading, error };
 }

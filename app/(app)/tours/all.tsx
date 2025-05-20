@@ -27,7 +27,7 @@ const ITEMS_PER_PAGE = 10;
 export default function AllTours() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const { tours, loading, error } = useTours();
+  const { tours, loading, error } = useTours('AVAILABLE');
   console.log(tours, '.....................sdfsf');
 
   const filteredTours = useMemo(() => {
@@ -49,16 +49,21 @@ export default function AllTours() {
   if (loading) {
     return (
       <ScrollView style={styles.container}>
-        {Array.from({ length: 6 }).map((_, index) => (
-          <SkeletonHostCard key={index} />
-        ))}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>All Tours</Text>
+        </View>
+        <View style={styles.toursList}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonHostCard key={index} />
+          ))}
+        </View>
       </ScrollView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
+      <View style={styles.container}>
         <Text style={styles.errorText}>{error}</Text>
       </View>
     );
@@ -67,16 +72,7 @@ export default function AllTours() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ChevronLeft size={24} color="#000" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>All Tours</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Filter size={24} color="#00BCD4" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -92,104 +88,52 @@ export default function AllTours() {
         </View>
       </View>
 
-      <ScrollView style={styles.toursList}>
-        {paginatedTours.map((tour) => (
-          <TouchableOpacity
-            key={tour.id}
-            style={styles.tourCard}
-            onPress={() => router.push(`/tours/${tour.id}`)}
-          >
-            <Image
-              source={{
-                uri: tour.host.profile.image
-                  ? tour.host.profile.image
-                  : 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
-              }}
-              style={styles.tourImage}
-            />
-            <View style={styles.tourContent}>
-              <Text style={styles.tourName}>{tour.title}</Text>
-              <View style={styles.tourInfo}>
-                <View style={styles.locationContainer}>
-                  <MapPin size={14} color="#666" />
-                  <Text style={styles.locationText}>{tour.location?.name}</Text>
-                </View>
-                <View style={styles.dateContainer}>
-                  <Calendar size={14} color="#666" />
-                  <Text style={styles.dateText}>
-                    {tour.startTime?.slice(0, 10)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.tourFooter}>
-                <View style={styles.guideInfo}>
-                  <Text style={styles.guideName}>{tour.host.profile.name}</Text>
-                  <View style={styles.ratingContainer}>
-                    <Star size={14} color="#FFD700" />
-                    <Text style={styles.ratingText}>
-                      {tour.host.profile.rating || 0}
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.toursList}>
+          {filteredTours.map((tour) => (
+            <TouchableOpacity
+              key={tour.id}
+              style={styles.tourCard}
+              onPress={() => router.push(`/tours/${tour.id}`)}
+            >
+              <Image
+                source={{ uri: tour.location.image }}
+                style={styles.tourImage}
+              />
+              <View style={styles.tourContent}>
+                <Text style={styles.tourTitle}>{tour.title}</Text>
+                <View style={styles.tourInfo}>
+                  <View style={styles.infoItem}>
+                    <MapPin size={16} color="#00BCD4" />
+                    <Text style={styles.infoText}>{tour.location.name}</Text>
+                  </View>
+                  <View style={styles.infoItem}>
+                    <Calendar size={16} color="#00BCD4" />
+                    <Text style={styles.infoText}>
+                      {new Date(tour.startTime).toLocaleDateString()}
                     </Text>
                   </View>
                 </View>
-                <View style={styles.priceContainer}>
-                  <Text style={styles.priceText}>${tour.price}</Text>
-                  <View style={styles.participantsContainer}>
-                    <Users size={14} color="#666" />
-                    <Text style={styles.participantsText}>
-                      {tour._count.booking} joined
+                <View style={styles.tourFooter}>
+                  <View style={styles.guideInfo}>
+                    <Image
+                      source={{
+                        uri:
+                          tour.host.profile?.image ||
+                          'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                      }}
+                      style={styles.guideImage}
+                    />
+                    <Text style={styles.guideName}>
+                      {tour.host.profile?.name || tour.host.email}
                     </Text>
                   </View>
+                  <Text style={styles.price}>${tour.price}</Text>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-
-        {totalPages > 1 && (
-          <View style={styles.pagination}>
-            <TouchableOpacity
-              style={[
-                styles.pageButton,
-                currentPage === 1 && styles.pageButtonDisabled,
-              ]}
-              onPress={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              <Text
-                style={[
-                  styles.pageButtonText,
-                  currentPage === 1 && styles.pageButtonTextDisabled,
-                ]}
-              >
-                Previous
-              </Text>
             </TouchableOpacity>
-
-            <Text style={styles.pageInfo}>
-              Page {currentPage} of {totalPages}
-            </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.pageButton,
-                currentPage === totalPages && styles.pageButtonDisabled,
-              ]}
-              onPress={() =>
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-              }
-              disabled={currentPage === totalPages}
-            >
-              <Text
-                style={[
-                  styles.pageButtonText,
-                  currentPage === totalPages && styles.pageButtonTextDisabled,
-                ]}
-              >
-                Next
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -201,37 +145,96 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 16,
     paddingTop: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
     backgroundColor: '#fff',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 24,
     fontFamily: 'InterBold',
     color: '#000',
   },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+  toursList: {
+    padding: 16,
+  },
+  tourCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  tourImage: {
+    width: '100%',
+    height: 200,
+  },
+  tourContent: {
+    padding: 16,
+  },
+  tourTitle: {
+    fontSize: 18,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  tourInfo: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 12,
+  },
+  infoItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
+  tourFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  guideInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guideImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  guideName: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+  },
+  price: {
+    fontSize: 18,
+    fontFamily: 'InterBold',
+    color: '#00BCD4',
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    color: '#ff0000',
+    textAlign: 'center',
+    marginTop: 16,
   },
   searchContainer: {
     padding: 16,
     paddingTop: 0,
+    marginTop: 14,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   searchBar: {
     flexDirection: 'row',
@@ -246,141 +249,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter',
   },
-  toursList: {
+  scrollView: {
     flex: 1,
-  },
-  tourCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  tourImage: {
-    width: 120,
-    height: 120,
-  },
-  tourContent: {
-    flex: 1,
-    padding: 12,
-  },
-  tourName: {
-    fontSize: 16,
-    fontFamily: 'InterSemiBold',
-    color: '#000',
-    marginBottom: 4,
-  },
-  tourInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationText: {
-    fontSize: 12,
-    fontFamily: 'Inter',
-    color: '#666',
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dateText: {
-    fontSize: 12,
-    fontFamily: 'Inter',
-    color: '#666',
-  },
-  tourFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  guideInfo: {
-    flex: 1,
-  },
-  guideName: {
-    fontSize: 12,
-    fontFamily: 'InterSemiBold',
-    color: '#000',
-    marginBottom: 2,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontFamily: 'Inter',
-    color: '#666',
-  },
-  priceContainer: {
-    alignItems: 'flex-end',
-  },
-  priceText: {
-    fontSize: 16,
-    fontFamily: 'InterBold',
-    color: '#00BCD4',
-    marginBottom: 4,
-  },
-  participantsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  participantsText: {
-    fontSize: 12,
-    fontFamily: 'Inter',
-    color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    color: '#FF4444',
-    fontSize: 16,
-    textAlign: 'center',
-    fontFamily: 'Inter',
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 0,
-  },
-  pageButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#00BCD4',
-    borderRadius: 8,
-  },
-  pageButtonDisabled: {
-    backgroundColor: '#f5f5f5',
-  },
-  pageButtonText: {
-    color: '#fff',
-    fontFamily: 'InterSemiBold',
-    fontSize: 14,
-  },
-  pageButtonTextDisabled: {
-    color: '#666',
-  },
-  pageInfo: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: '#666',
   },
 });
