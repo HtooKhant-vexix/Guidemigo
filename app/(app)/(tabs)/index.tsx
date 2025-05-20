@@ -276,18 +276,12 @@ export default function Home() {
 
         <View style={styles.searchContainer}>
           <Search size={20} color="#666" />
-          <TextInput
+          <TouchableOpacity
             style={styles.searchInput}
-            placeholder="Search tours..."
-            placeholderTextColor="#666"
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              setCurrentPage(1);
-              setDisplayedTours(tours.slice(0, ITEMS_PER_PAGE));
-              setHasMore(tours.length > ITEMS_PER_PAGE);
-            }}
-          />
+            onPress={() => router.push('/search')}
+          >
+            <Text style={styles.searchPlaceholder}>Search tours...</Text>
+          </TouchableOpacity>
         </View>
 
         {toursLoading ? (
@@ -406,11 +400,12 @@ export default function Home() {
 
         <View style={styles.searchContainer}>
           <Search size={20} color="#666" />
-          <TextInput
+          <TouchableOpacity
             style={styles.searchInput}
-            placeholder="Search Here"
-            placeholderTextColor="#666"
-          />
+            onPress={() => router.push('/search')}
+          >
+            <Text style={styles.searchPlaceholder}>Search Here</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.title}>
           Go Everywhere and Create a{'\n'}Moment Everywhere!
@@ -576,6 +571,13 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     fontFamily: 'Inter',
+    // height: 40,
+    justifyContent: 'center',
+  },
+  searchPlaceholder: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    color: '#666',
   },
   roleContainer: {
     flexDirection: 'row',
