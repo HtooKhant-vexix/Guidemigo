@@ -38,11 +38,6 @@ interface TourData {
   startTime: string;
   endTime: string;
   status: string;
-  image?: {
-    uri: string;
-    type: string;
-    name: string;
-  };
 }
 
 interface ProfileResponse {
@@ -202,14 +197,19 @@ export const NewPost = async (
   return response.data;
 };
 
-export const NewTour = async (tourData: TourData | FormData) => {
-  const headers =
-    tourData instanceof FormData
-      ? { 'Content-Type': 'multipart/form-data' }
-      : { 'Content-Type': 'application/json' };
-
-  const { data } = await api.post('/tour', tourData, { headers });
-  return data;
+export const NewTour = async (tourData: TourData) => {
+  try {
+    const { data } = await api.post('/tour', tourData, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return data;
+  } catch (error: any) {
+    console.error(
+      'Tour creation error:',
+      error.response?.data || error.message
+    );
+    throw error;
+  }
 };
 
 export const updatePost = async (

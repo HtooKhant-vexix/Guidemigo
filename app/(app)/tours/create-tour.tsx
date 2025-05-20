@@ -5,20 +5,17 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useState, useEffect } from 'react';
 import {
-  Camera,
   MapPin,
   Clock,
   Users,
   DollarSign,
   Calendar,
 } from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { NewTour, fetchPlaces } from '@/service/api';
 import { usePlaces } from '@/hooks/useData';
@@ -45,7 +42,6 @@ export default function CreateTour() {
   const [endDate, setEndDate] = useState(new Date());
   const [maxParticipants, setMaxParticipants] = useState('');
   const [price, setPrice] = useState('');
-  const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -71,19 +67,6 @@ export default function CreateTour() {
       Alert.alert('Error', 'Failed to load places. Please try again.');
     } finally {
       setIsLoadingPlaces(false);
-    }
-  };
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0].uri) {
-      setImage(result.assets[0].uri);
     }
   };
 
@@ -125,27 +108,8 @@ export default function CreateTour() {
         status: 'AVAILABLE',
       };
 
-      // If there's an image, create FormData
-      if (image) {
-        const formData = new FormData();
-
-        // Append all tour data as strings
-        Object.entries(tourData).forEach(([key, value]) => {
-          formData.append(key, value.toString());
-        });
-
-        // Append image
-        formData.append('image', {
-          uri: image,
-          type: 'image/jpeg',
-          name: 'tour-image.jpg',
-        } as any);
-
-        await NewTour(formData);
-      } else {
-        // If no image, send regular JSON data
-        await NewTour(tourData);
-      }
+      // Send tour data
+      await NewTour(tourData);
 
       Alert.alert('Success', 'Tour created successfully!');
       router.back(); // Navigate back to previous screen
@@ -272,17 +236,6 @@ export default function CreateTour() {
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity style={styles.imageUpload} onPress={pickImage}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.uploadedImage} />
-          ) : (
-            <View style={styles.uploadPlaceholder}>
-              <Camera size={32} color="#666" />
-              <Text style={styles.uploadText}>Upload Tour Image</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Tour Title</Text>
@@ -437,28 +390,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-  },
-  imageUpload: {
-    height: 200,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  uploadedImage: {
-    width: '100%',
-    height: '100%',
-  },
-  uploadPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  uploadText: {
-    fontSize: 16,
-    fontFamily: 'Inter',
-    color: '#666',
   },
   form: {
     gap: 24,
