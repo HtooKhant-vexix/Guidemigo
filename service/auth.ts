@@ -209,6 +209,9 @@ api.interceptors.response.use(
     try {
       const tokens = await tokenManager.getTokens();
       if (!tokens?.refreshToken) {
+        // If no refresh token, clear everything and redirect to login
+        await tokenManager.clearTokens();
+        await useAuthStore.getState().logout();
         throw new Error('No refresh token available');
       }
 
@@ -249,7 +252,10 @@ api.interceptors.response.use(
       return retryResponse;
     } catch (refreshError: any) {
       // Only logout if the refresh token is expired (401)
-      if (refreshError.response?.status === 401) {
+      if (
+        refreshError.response?.status === 401 ||
+        refreshError.message === 'No refresh token available'
+      ) {
         refreshQueue.process(refreshError, null);
         await tokenManager.clearTokens();
         await useAuthStore.getState().logout();
@@ -288,36 +294,64 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // First, store the tokens
-      await tokenManager.setTokens(tokens);
-
-      // Then try to validate them
-      const response = await api.post(REFRESH_ENDPOINT, {
-        refreshToken: tokens.refreshToken,
-      });
-
-      const responseData = response.data as TokenRefreshResponse;
-      if (!responseData.success) {
-        throw new Error('Failed to validate tokens');
+      // Check if we have any tokens to work with
+      if (!tokens) {
+        throw new Error('No tokens provided');
       }
 
-      const newTokens = {
-        accessToken: responseData.data.accessToken,
-        refreshToken: responseData.data.refreshToken,
-      };
+      // Store whatever tokens we have
+      await tokenManager.setTokens(tokens);
 
-      // Update storage with new tokens
-      await tokenManager.setTokens(newTokens);
+      // Only attempt validation if we have a refresh token
+      if (tokens.refreshToken) {
+        try {
+          const response = await api.post(REFRESH_ENDPOINT, {
+            refreshToken: tokens.refreshToken,
+          });
 
-      // Update state
-      set({
-        user: responseData.data.user,
-        isAuthenticated: true,
-        accessToken: newTokens.accessToken,
-        refreshToken: newTokens.refreshToken,
-        isLoading: false,
-        error: null,
-      });
+          const responseData = response.data as TokenRefreshResponse;
+          if (responseData.success) {
+            const newTokens = {
+              accessToken: responseData.data.accessToken,
+              refreshToken: responseData.data.refreshToken,
+            };
+
+            // Update storage with new tokens
+            await tokenManager.setTokens(newTokens);
+
+            // Update state with validated tokens and user
+            set({
+              user: responseData.data.user,
+              isAuthenticated: true,
+              accessToken: newTokens.accessToken,
+              refreshToken: newTokens.refreshToken,
+              isLoading: false,
+              error: null,
+            });
+            return;
+          }
+        } catch (error) {
+          console.warn('Token validation failed:', error);
+          // Don't throw here, fall through to use existing tokens
+        }
+      }
+
+      // If we have an access token but validation failed or wasn't attempted,
+      // still set the state with what we have
+      if (tokens.accessToken) {
+        set({
+          isAuthenticated: true,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      // If we get here, we have no valid tokens
+      await tokenManager.clearTokens();
+      throw new Error('No valid tokens available');
     } catch (error) {
       console.error('Auth initialization error:', error);
       set({
@@ -325,8 +359,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error:
           error instanceof Error ? error.message : 'Failed to initialize auth',
         isAuthenticated: false,
+        user: null,
+        accessToken: null,
+        refreshToken: null,
       });
-      await tokenManager.clearTokens();
       throw error;
     }
   },
@@ -334,17 +370,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (credentials) => {
     try {
       set({ isLoading: true, error: null });
-      const { data } = await api.post<AuthResponse>('/auth/login', credentials);
+      const response = await api.post<AuthResponse>('/auth/login', credentials);
 
-      if (data.success) {
+      if (response.data.success) {
         const tokens = {
-          accessToken: data.data.accessToken,
-          refreshToken: data.data.refreshToken,
+          accessToken: response.data.data.accessToken,
+          refreshToken: response.data.data.refreshToken,
         };
 
         await tokenManager.setTokens(tokens);
         set({
-          user: data.data.user,
+          user: response.data.data.user,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           isAuthenticated: true,
@@ -357,6 +393,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         error: error instanceof Error ? error.message : 'Failed to login',
         isLoading: false,
+        isAuthenticated: false,
+        user: null,
+        accessToken: null,
+        refreshToken: null,
       });
       throw error;
     }

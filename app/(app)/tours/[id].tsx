@@ -318,7 +318,7 @@ export default function TourDetail() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>{tour.host.profile.name}</Text>
+        <Text style={styles.title}>{tour.title}</Text>
 
         <View style={styles.guideContainer}>
           <Image

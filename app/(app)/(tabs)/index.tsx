@@ -129,7 +129,7 @@ export default function Home() {
       </View>
     );
   }
-
+  console.log(hosts[0]);
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
@@ -198,7 +198,11 @@ export default function Home() {
               onPress={() => router.push(`/hosts/${host.id}`)}
             >
               <Image
-                source={HOSTS[0].image || hosts?.profile.image}
+                source={
+                  host?.profile?.image
+                    ? { uri: host.profile.image }
+                    : require('../../../assets/images/1.png')
+                }
                 style={styles.hostImage}
               />
               <View style={styles.hostInfo}>
@@ -209,13 +213,14 @@ export default function Home() {
                 <View style={styles.hostRating}>
                   <CircleUserRound size={19} color="#00BCD4" />
                   <Text style={styles.hostDetails}>
-                    Hosted {host?.profile.travellers || 0} Travelers
+                    Hosted {host?.profile?.travellers || 0} Travelers
                   </Text>
                 </View>
                 <View style={styles.hostRating}>
                   <Languages size={19} color="#00BCD4" />
                   <Text style={styles.hostLanguages}>
-                    {host.profile?.languages?.join(', ')}
+                    {host?.profile?.languages?.join(', ') ||
+                      'No languages specified'}
                   </Text>
                 </View>
               </View>

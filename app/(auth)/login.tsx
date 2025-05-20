@@ -15,7 +15,7 @@ export default function Login() {
   const [email, setEmail] = useState(
     'digitalengineeringtech.frontend@gmail.com'
   );
-  const [password, setPassword] = useState('asdffdsa');
+  const [password, setPassword] = useState('Asdffdsa');
   const { login, isLoading, error, clearError } = useAuth();
 
   const handleLogin = async () => {
