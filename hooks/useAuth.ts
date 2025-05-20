@@ -35,8 +35,42 @@ export function useAuth() {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/welcome');
+    try {
+      await logout();
+      await AsyncStorage.removeItem('tokens');
+      router.replace('/welcome');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const handleLogin = async (credentials: {
+    email: string;
+    password: string;
+  }) => {
+    try {
+      await login(credentials);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const handleRegister = async (data: {
+    email: string;
+    password: string;
+    name: string;
+    type: string;
+  }) => {
+    try {
+      const tokens = await register(data);
+      if (tokens) {
+        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   };
 
   return {
@@ -45,8 +79,8 @@ export function useAuth() {
     error,
     setup,
     isAuthenticated: !!user,
-    login,
-    register,
+    login: handleLogin,
+    register: handleRegister,
     logout: handleLogout,
     clearError,
   };

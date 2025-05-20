@@ -1,5 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios from 'axios';
+import type {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import { create } from 'zustand';
 
 interface AuthTokens {
@@ -42,6 +47,8 @@ interface AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   setup: (data: any, token: AuthTokens) => Promise<any>;
+  setTokens: (tokens: AuthTokens) => void;
+  setUser: (user: User) => void;
 }
 
 const api = axios.create({
@@ -144,7 +151,7 @@ const tokenManager = {
 
 // Enhanced request interceptor
 api.interceptors.request.use(
-  async (config) => {
+  async (config: InternalAxiosRequestConfig) => {
     try {
       const tokens = await tokenManager.getTokens();
       if (tokens?.accessToken && config.headers) {
@@ -164,12 +171,28 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Check if it's an axios error and has a response
+    if (!error.response || !originalRequest) {
+      return Promise.reject(error);
+    }
+
     // Handle non-401 errors or already retried requests
-    if (
-      !originalRequest ||
-      error.response?.status !== 401 ||
-      originalRequest._retry
-    ) {
+    if (error.response.status !== 401 || originalRequest._retry) {
+      // If we get a 403 (Forbidden) or other auth errors, logout
+      if (error.response.status === 403) {
+        await tokenManager.clearTokens();
+        await useAuthStore.getState().logout();
+      }
+      return Promise.reject(error);
+    }
+
+    // Don't retry refresh token requests to avoid infinite loops
+    if (originalRequest.url === REFRESH_ENDPOINT) {
+      // Only logout if refresh token is expired (usually indicated by 401)
+      if (error.response.status === 401) {
+        await tokenManager.clearTokens();
+        await useAuthStore.getState().logout();
+      }
       return Promise.reject(error);
     }
 
@@ -189,20 +212,31 @@ api.interceptors.response.use(
         throw new Error('No refresh token available');
       }
 
-      const { data } = await api.post<TokenRefreshResponse>(REFRESH_ENDPOINT, {
+      // Make sure we don't use the expired token for the refresh request
+      delete originalRequest.headers?.Authorization;
+
+      const response = await api.post(REFRESH_ENDPOINT, {
         refreshToken: tokens.refreshToken,
       });
 
-      if (!data.success) {
+      const responseData = response.data as TokenRefreshResponse;
+      if (!responseData.success) {
         throw new Error('Token refresh failed');
       }
 
       const newTokens = {
-        accessToken: data.data.accessToken,
-        refreshToken: data.data.refreshToken,
+        accessToken: responseData.data.accessToken,
+        refreshToken: responseData.data.refreshToken,
       };
 
+      // Update tokens in storage first
       await tokenManager.setTokens(newTokens);
+
+      // Update the store with new tokens and user data
+      useAuthStore.getState().setTokens(newTokens);
+      useAuthStore.getState().setUser(responseData.data.user);
+
+      // Process queued requests with new token
       refreshQueue.process(null, newTokens.accessToken);
 
       // Update the original request with new token
@@ -210,10 +244,19 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
       }
 
-      return api(originalRequest);
-    } catch (refreshError) {
-      refreshQueue.process(refreshError, null);
-      await useAuthStore.getState().logout();
+      // Retry the original request with new token
+      const retryResponse = await api(originalRequest);
+      return retryResponse;
+    } catch (refreshError: any) {
+      // Only logout if the refresh token is expired (401)
+      if (refreshError.response?.status === 401) {
+        refreshQueue.process(refreshError, null);
+        await tokenManager.clearTokens();
+        await useAuthStore.getState().logout();
+      } else {
+        // For other errors, just reject the request
+        refreshQueue.process(refreshError, null);
+      }
       return Promise.reject(refreshError);
     } finally {
       refreshQueue.setRefreshing(false);
@@ -229,29 +272,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   isAuthenticated: false,
 
+  setTokens: (tokens: AuthTokens) => {
+    set({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      isAuthenticated: true,
+    });
+  },
+
+  setUser: (user: User) => {
+    set({ user });
+  },
+
   initializeAuth: async (tokens: AuthTokens) => {
     try {
-      set({ isLoading: true });
-      await tokenManager.setTokens(tokens);
-      const response = await api.post<AuthResponse>(
-        REFRESH_ENDPOINT,
-        { refreshToken: tokens.refreshToken },
-        { headers: { Authorization: `Bearer ${tokens.accessToken}` } }
-      );
+      set({ isLoading: true, error: null });
 
-      if (response.data.success) {
-        set({
-          user: response.data.data.user,
-          isAuthenticated: true,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          isLoading: false,
-        });
-      } else {
-        throw new Error('Failed to initialize auth');
+      // First, store the tokens
+      await tokenManager.setTokens(tokens);
+
+      // Then try to validate them
+      const response = await api.post(REFRESH_ENDPOINT, {
+        refreshToken: tokens.refreshToken,
+      });
+
+      const responseData = response.data as TokenRefreshResponse;
+      if (!responseData.success) {
+        throw new Error('Failed to validate tokens');
       }
+
+      const newTokens = {
+        accessToken: responseData.data.accessToken,
+        refreshToken: responseData.data.refreshToken,
+      };
+
+      // Update storage with new tokens
+      await tokenManager.setTokens(newTokens);
+
+      // Update state
+      set({
+        user: responseData.data.user,
+        isAuthenticated: true,
+        accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
+        isLoading: false,
+        error: null,
+      });
     } catch (error) {
-      set({ isLoading: false });
+      console.error('Auth initialization error:', error);
+      set({
+        isLoading: false,
+        error:
+          error instanceof Error ? error.message : 'Failed to initialize auth',
+        isAuthenticated: false,
+      });
       await tokenManager.clearTokens();
       throw error;
     }
