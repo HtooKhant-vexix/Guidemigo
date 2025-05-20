@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { usePosts } from '@/hooks/useData';
 import { SkeletonFeedPost } from '@/components/SkeletonFeedPost';
+import { Skeleton } from '@/components/Skeleton';
 
 const POSTS = [
   {
@@ -293,6 +294,13 @@ export default function Feed() {
     if (loading) {
       return (
         <ScrollView style={styles.container}>
+          {/* Skeleton Header */}
+          <View style={styles.header}>
+            <View style={styles.skeletonHeaderTitle} />
+            <View style={styles.skeletonNewPostButton} />
+          </View>
+
+          {/* Skeleton Feed Posts */}
           {Array.from({ length: 3 }).map((_, index) => (
             <SkeletonFeedPost key={index} />
           ))}
@@ -515,5 +523,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter',
     color: '#666',
+  },
+
+  // Skeleton Styles
+  skeletonHeaderTitle: {
+    width: 180,
+    height: 28,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonNewPostButton: {
+    width: 100,
+    height: 36,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 18,
   },
 });

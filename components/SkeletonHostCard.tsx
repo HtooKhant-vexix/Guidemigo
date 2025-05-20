@@ -4,12 +4,20 @@ import { Skeleton, SkeletonText } from './Skeleton';
 export function SkeletonHostCard() {
   return (
     <View style={styles.container}>
-      <Skeleton height={120} />
+      <View style={styles.imageContainer}>
+        <Skeleton height={260} borderRadius={12} />
+      </View>
       <View style={styles.content}>
-        <SkeletonText lines={1} />
+        <SkeletonText lines={1} spacing={8} />
         <View style={styles.stats}>
-          <Skeleton width={80} height={16} />
-          <Skeleton width={60} height={16} />
+          <View style={styles.stat}>
+            <Skeleton width={24} height={24} variant="circular" />
+            <Skeleton width={60} height={16} />
+          </View>
+          <View style={styles.stat}>
+            <Skeleton width={24} height={24} variant="circular" />
+            <Skeleton width={60} height={16} />
+          </View>
         </View>
       </View>
     </View>
@@ -18,18 +26,35 @@ export function SkeletonHostCard() {
 
 const styles = StyleSheet.create({
   container: {
-    width: 200,
     backgroundColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#eee',
+    shadowColor: '#000',
+    marginHorizontal: 10,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 120,
   },
   content: {
-    padding: 12,
-    gap: 8,
+    padding: 16,
+    marginTop: 10,
+    gap: 12,
   },
   stats: {
-    gap: 4,
+    flexDirection: 'row',
+    gap: 16,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });

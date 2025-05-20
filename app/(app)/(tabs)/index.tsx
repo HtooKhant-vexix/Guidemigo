@@ -29,6 +29,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/service/auth';
 import { useHosts, usePlaces, useTours } from '@/hooks/useData';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
+import { SkeletonPlaceCard } from '@/components/SkeletonPlaceCard';
+import { SkeletonCard } from '@/components/Skeleton';
 import { useState, useRef, useEffect } from 'react';
 
 const PLACES = [
@@ -113,11 +115,77 @@ export default function Home() {
   }, [tours]);
 
   if (placesLoading || hostsLoading) {
+    // if (true) {
     return (
       <ScrollView style={styles.container}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <SkeletonHostCard key={index} />
-        ))}
+        <View style={styles.bg_ske}>
+          {/* Skeleton Header */}
+          <View style={styles.header}>
+            <View style={styles.locationContainer}>
+              <View style={styles.skeletonLocationIcon} />
+              <View>
+                <View style={styles.skeletonLocationLabel} />
+                <View style={styles.skeletonLocationText} />
+              </View>
+            </View>
+            <View style={styles.skeletonNotificationButton} />
+          </View>
+          {/* Skeleton Search */}
+          <View style={styles.searchContainer_ske}>
+            {/* <View style={styles.skeletonSearchIcon} />
+            <View style={styles.skeletonSearchInput} /> */}
+          </View>
+          {/* Skeleton Title */}
+          <View style={styles.title}>
+            <View style={styles.skeletonTitle} />
+            <View
+              style={[styles.skeletonTitle, { width: '60%', marginTop: 5 }]}
+            />
+          </View>
+        </View>
+
+        {/* Skeleton Role Selector */}
+        <View style={styles.roleContainer}>
+          <View style={styles.skeletonRoleButton} />
+          <View style={styles.skeletonRoleButton} />
+        </View>
+
+        {/* Skeleton Ads Section */}
+        <View style={styles.section}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {Array.from({ length: 2 }).map((_, index) => (
+              <View key={index} style={styles.ads}>
+                <SkeletonCard height={170} />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Skeleton Best Hosts Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.skeletonSectionTitle} />
+            <View style={styles.skeletonViewAllButton} />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {Array.from({ length: 2 }).map((_, index) => (
+              <SkeletonHostCard key={index} />
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Skeleton Best Places Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.skeletonSectionTitle} />
+            <View style={styles.skeletonViewAllButton} />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonPlaceCard key={index} />
+            ))}
+          </ScrollView>
+        </View>
       </ScrollView>
     );
   }
@@ -495,6 +563,10 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 48,
   },
+  bg_ske: {
+    backgroundColor: '#eee',
+    height: 260,
+  },
   bg: {
     backgroundColor: '#00BCD4',
   },
@@ -563,6 +635,16 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    padding: 12,
+    paddingStart: 26,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 100,
+  },
+  searchContainer_ske: {
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
@@ -963,5 +1045,69 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontFamily: 'InterBold',
+  },
+  skeletonLocationIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#e0e0e0',
+  },
+  skeletonLocationLabel: {
+    width: 100,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonLocationText: {
+    width: 150,
+    height: 16,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonNotificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e0e0e0',
+  },
+  skeletonSearchIcon: {
+    width: 20,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonSearchInput: {
+    flex: 1,
+    marginLeft: 8,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonTitle: {
+    width: '80%',
+    height: 28,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginHorizontal: 16,
+    paddingStart: 26,
+  },
+  skeletonRoleButton: {
+    flex: 1,
+    height: 80,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 12,
+  },
+  skeletonSectionTitle: {
+    width: 150,
+    height: 18,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonViewAllButton: {
+    width: 60,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
   },
 });

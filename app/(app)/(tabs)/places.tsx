@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import { Search, MapPin, Star, Clock, Users } from 'lucide-react-native';
 import { usePlaces } from '@/hooks/useData';
 import { SkeletonPlaceCard } from '@/components/SkeletonPlaceCard';
+import { Skeleton, SkeletonText, SkeletonCard } from '@/components/Skeleton';
 import { Place } from '@/types/api';
 
 const CATEGORIES = [
@@ -115,6 +116,22 @@ const TrendingCard = memo(({ place }: PlaceCardProps) => (
   </TouchableOpacity>
 ));
 
+// New Skeleton Trending Card Component
+const SkeletonTrendingCard = () => (
+  <View style={styles.skeletonTrendingCard}>
+    <Skeleton height={100} width={100} style={styles.skeletonTrendingImage} />
+    <View style={styles.skeletonTrendingContent}>
+      <View>
+        <Skeleton height={16} width={120} style={{ marginBottom: 4 }} />
+        <View style={styles.locationContainer}>
+          <View style={styles.skeletonIcon} />
+          <Skeleton height={14} width={80} />
+        </View>
+      </View>
+    </View>
+  </View>
+);
+
 export default function Places() {
   const [searchQuery, setSearchQuery] = useState('');
   const { places, loading, error } = usePlaces();
@@ -141,9 +158,62 @@ export default function Places() {
     if (loading) {
       return (
         <ScrollView style={styles.container}>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <SkeletonPlaceCard key={index} />
-          ))}
+          {/* Skeleton Header */}
+          <View style={styles.header}>
+            <View style={styles.skeletonHeaderTitle} />
+            <View style={styles.skeletonHeaderSubtitle} />
+          </View>
+
+          {/* Skeleton Search */}
+          <View style={styles.searchContainer}>
+            <View style={styles.skeletonSearchBar}>
+              <View style={styles.skeletonSearchIcon} />
+              <View style={styles.skeletonSearchInput} />
+            </View>
+          </View>
+
+          {/* Skeleton Categories */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categories}
+            contentContainerStyle={styles.categoriesContent}
+          >
+            {Array.from({ length: 5 }).map((_, index) => (
+              <View key={index} style={styles.skeletonCategoryButton}>
+                <View style={styles.skeletonCategoryIcon} />
+                <View style={styles.skeletonCategoryName} />
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Skeleton Featured Places */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.skeletonSectionTitle} />
+              <View style={styles.skeletonSeeAllButton} />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.featuredContainer}
+            >
+              {Array.from({ length: 3 }).map((_, index) => (
+                <SkeletonPlaceCard key={index} />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Skeleton Trending Now */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.skeletonSectionTitle} />
+              <View style={styles.skeletonSeeAllButton} />
+            </View>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonTrendingCard key={index} />
+            ))}
+          </View>
         </ScrollView>
       );
     }
@@ -443,5 +513,98 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'InterSemiBold',
     color: '#000',
+  },
+  skeletonHeaderTitle: {
+    width: 200,
+    height: 28,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonHeaderSubtitle: {
+    width: 180,
+    height: 16,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    borderRadius: 12,
+  },
+  skeletonSearchIcon: {
+    width: 20,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonSearchInput: {
+    flex: 1,
+    marginLeft: 8,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonCategoryButton: {
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    width: 80, // Approximate width
+  },
+  skeletonCategoryIcon: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  skeletonCategoryName: {
+    width: 40,
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonSectionTitle: {
+    width: 150,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonSeeAllButton: {
+    width: 60,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonTrendingCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  skeletonTrendingImage: {
+    marginRight: 12,
+  },
+  skeletonTrendingContent: {
+    flex: 1,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  skeletonIcon: {
+    width: 14,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 7,
+    marginRight: 4,
   },
 });

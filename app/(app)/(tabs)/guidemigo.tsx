@@ -11,6 +11,12 @@ import { router } from 'expo-router';
 import { MapPin, Calendar, Users, Star } from 'lucide-react-native';
 import { useHosts, useTours } from '@/hooks/useData';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
+import {
+  Skeleton,
+  SkeletonAvatar,
+  SkeletonText,
+  SkeletonCard,
+} from '@/components/Skeleton';
 
 const UPCOMING_TOURS = [
   {
@@ -79,9 +85,99 @@ export default function Guidemigo() {
   if (loading) {
     return (
       <ScrollView style={styles.container}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <SkeletonHostCard key={index} />
-        ))}
+        {/* Skeleton Header */}
+        <View style={styles.header}>
+          <View style={styles.skeletonHeaderTitle} />
+        </View>
+
+        {/* Skeleton Upcoming Tours */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.skeletonSectionTitle} />
+            <View style={styles.skeletonSeeAllButton} />
+          </View>
+          {Array.from({ length: 2 }).map((_, index) => (
+            <View key={index} style={styles.upcomingTourCard}>
+              <View style={styles.tourHeader}>
+                <View>
+                  <Skeleton
+                    height={16}
+                    width={150}
+                    style={{ marginBottom: 4 }}
+                  />
+                  <View style={styles.locationContainer}>
+                    <View style={styles.skeletonIcon} />
+                    <Skeleton height={14} width={100} />
+                  </View>
+                </View>
+                <View style={styles.dateContainer}>
+                  <View style={styles.skeletonIcon} />
+                  <Skeleton height={14} width={80} />
+                  <Skeleton height={12} width={50} />
+                </View>
+              </View>
+              <View style={styles.tourGuide}>
+                <SkeletonAvatar size={40} />
+                <View style={styles.guideInfo}>
+                  <Skeleton
+                    height={14}
+                    width={120}
+                    style={{ marginBottom: 2 }}
+                  />
+                  <View style={styles.guideStats}>
+                    <View style={styles.skeletonIcon} />
+                    <Skeleton height={12} width={30} />
+                  </View>
+                </View>
+                <View style={styles.participantsContainer}>
+                  <View style={styles.skeletonIcon} />
+                  <Skeleton height={12} width={60} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Skeleton Recommended Tours */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.skeletonSectionTitle} />
+            <View style={styles.skeletonSeeAllButton} />
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.recommendedContainer}
+          >
+            {Array.from({ length: 3 }).map((_, index) => (
+              <View key={index} style={styles.recommendedCard}>
+                <Skeleton height={160} style={styles.recommendedImage} />
+                <View style={styles.recommendedContent}>
+                  <Skeleton
+                    height={16}
+                    width={100}
+                    style={styles.recommendedName}
+                  />
+                  <Skeleton
+                    height={18}
+                    width={60}
+                    style={styles.recommendedPrice}
+                  />
+                  <View style={styles.recommendedStats}>
+                    <View style={styles.stat}>
+                      <View style={styles.skeletonIcon} />
+                      <Skeleton height={12} width={40} />
+                    </View>
+                    <View style={styles.stat}>
+                      <View style={styles.skeletonIcon} />
+                      <Skeleton height={12} width={30} />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
       </ScrollView>
     );
   }
@@ -399,5 +495,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter',
     color: '#666',
+  },
+  skeletonHeaderTitle: {
+    width: 150,
+    height: 24,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  skeletonSectionTitle: {
+    width: 120,
+    height: 18,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonSeeAllButton: {
+    width: 60,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonIcon: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 8,
   },
 });
