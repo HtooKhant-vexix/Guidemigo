@@ -269,7 +269,7 @@ export default function Home() {
                 source={
                   host?.profile?.image
                     ? { uri: host.profile.image }
-                    : require('../../../assets/images/1.png')
+                    : require('../../../assets/images/default.jpg')
                 }
                 style={styles.hostImage}
               />
@@ -414,11 +414,13 @@ export default function Home() {
 
                 <View style={styles.tourGuide}>
                   <Image
-                    source={{
-                      uri:
-                        tour.host?.profile?.image ||
-                        'https://images.unsplash.com/photo-1565967511849-76a60a516170',
-                    }}
+                    source={
+                      tour.host?.profile?.image
+                        ? {
+                            uri: tour.host?.profile?.image,
+                          }
+                        : require('../../../assets/images/default.jpg')
+                    }
                     style={styles.guideImage}
                   />
                   <View style={styles.guideInfo}>

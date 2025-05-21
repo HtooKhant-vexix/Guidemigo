@@ -20,32 +20,13 @@ import {
 } from 'lucide-react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useTours } from '@/hooks/useData';
+import { useAuth } from '@/hooks/useAuth';
 import { Post } from '@/types/api';
 
 type BookingStatus = 'upcoming' | 'completed';
 
-interface Booking extends Post {
+interface Booking extends Omit<Post, 'status'> {
   status: BookingStatus;
-  startTime: string;
-  endTime: string;
-  maxSeats: number;
-  host: {
-    id: number;
-    email: string;
-    profile?: {
-      name: string;
-      image: string;
-      rating: number;
-    };
-  };
-  location: {
-    id: number;
-    name: string;
-    image: string;
-  };
-  _count: {
-    booking: number;
-  };
 }
 
 const SkeletonBookingCard = () => {
@@ -134,12 +115,17 @@ export default function Bookings() {
     'all'
   );
   const { tours, loading, error } = useTours();
+  const { user } = useAuth();
 
   const filteredBookings = tours
-    .map((tour) => ({
-      ...tour,
-      status: tour.status === 'AVAILABLE' ? 'upcoming' : 'completed',
-    }))
+    .filter((tour) => tour.hostId === user?.id)
+    .map(
+      (tour) =>
+        ({
+          ...tour,
+          status: tour.status === 'AVAILABLE' ? 'upcoming' : 'completed',
+        } as Booking)
+    )
     .filter((booking) => {
       if (activeFilter === 'all') return true;
       return booking.status === activeFilter;
@@ -252,12 +238,9 @@ export default function Bookings() {
               source={{
                 uri:
                   booking.host.profile?.image ||
-                  'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                  'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
               }}
-              style={[
-                styles.guideAvatar,
-                booking.status === 'completed' && styles.completedImage,
-              ]}
+              style={styles.guideAvatar}
             />
             <Text
               style={[
@@ -280,7 +263,7 @@ export default function Bookings() {
             <Text
               style={[
                 styles.price,
-                booking.status === 'completed' && styles.completedPrice,
+                booking.status === 'completed' && styles.completedText,
               ]}
             >
               ${booking.price}
@@ -291,21 +274,20 @@ export default function Bookings() {
         <View
           style={[
             styles.statusBadge,
-            {
-              backgroundColor:
-                booking.status === 'upcoming' ? '#E3F2FD' : '#F5F5F5',
-            },
+            booking.status === 'upcoming'
+              ? styles.upcomingBadge
+              : styles.completedBadge,
           ]}
         >
           <Text
             style={[
               styles.statusText,
-              {
-                color: booking.status === 'upcoming' ? '#1976D2' : 'gray',
-              },
+              booking.status === 'upcoming'
+                ? styles.upcomingText
+                : styles.completedText,
             ]}
           >
-            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            {booking.status === 'upcoming' ? 'Upcoming' : 'Completed'}
           </Text>
         </View>
       </View>
@@ -319,7 +301,7 @@ export default function Bookings() {
           <Text style={styles.headerTitle}>Booking History</Text>
         </View>
         <View style={styles.filterContainer}>
-          {['all', 'upcoming', 'completed'].map((filter) => (
+          {/* {['all', 'upcoming', 'completed'].map((filter) => (
             <TouchableOpacity
               key={filter}
               style={[
@@ -337,7 +319,7 @@ export default function Bookings() {
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Text>
             </TouchableOpacity>
-          ))}
+          ))} */}
         </View>
         <View style={styles.bookingsContainer}>
           {[1, 2, 3].map((_, index) => (
@@ -648,5 +630,14 @@ const styles = StyleSheet.create({
   },
   completedCard: {
     backgroundColor: '#EEEEEE',
+  },
+  upcomingBadge: {
+    backgroundColor: '#E3F2FD',
+  },
+  completedBadge: {
+    backgroundColor: '#F5F5F5',
+  },
+  upcomingText: {
+    color: '#1976D2',
   },
 });

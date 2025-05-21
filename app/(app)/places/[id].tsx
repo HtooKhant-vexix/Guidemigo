@@ -165,39 +165,65 @@ export default function PlaceDetail() {
           </View>
 
           <ScrollView style={styles.toursList}>
-            {placeTours.map((tour) => (
-              <TouchableOpacity
-                key={tour.id}
-                style={styles.tourCard}
-                onPress={() => {
-                  setShowToursModal(false);
-                  router.push(`/tours/${tour.id}`);
-                }}
-              >
-                <Image
-                  source={{
-                    uri: 'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+            {placeTours.length > 0 ? (
+              placeTours.map((tour) => (
+                <TouchableOpacity
+                  key={tour.id}
+                  style={styles.tourCard}
+                  onPress={() => {
+                    setShowToursModal(false);
+                    router.push(`/tours/${tour.id}`);
                   }}
-                  style={styles.tourImage}
-                />
-                <View style={styles.tourInfo}>
-                  <Text style={styles.tourName}>{tour.title}</Text>
-                  <View style={styles.tourDetails}>
-                    <Calendar size={16} color="#00BCD4" />
-                    <Text style={styles.tourDate}>
-                      {tour.startTime?.slice(0, 10)}
-                    </Text>
+                >
+                  <Image
+                    source={{
+                      uri:
+                        place_data.image ||
+                        'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                    }}
+                    style={styles.tourImage}
+                  />
+                  <View style={styles.tourInfo}>
+                    <Text style={styles.tourName}>{tour.title}</Text>
+                    <View style={styles.tourDetails}>
+                      <Calendar size={16} color="#00BCD4" />
+                      <Text style={styles.tourDate}>
+                        {tour.startTime?.slice(0, 10)}
+                      </Text>
+                    </View>
+                    <View style={styles.tourDetails}>
+                      <Users size={16} color="#00BCD4" />
+                      <Text style={styles.tourLocation}>
+                        Host:{' '}
+                        {tour.host?.profile?.name ||
+                          tour.host?.email ||
+                          'No host'}
+                      </Text>
+                    </View>
+                    <Text style={styles.tourPrice}>${tour.price}</Text>
                   </View>
-                  <View style={styles.tourDetails}>
-                    <Users size={16} color="#00BCD4" />
-                    <Text style={styles.tourLocation}>
-                      Host: {tour.host?.profile.name || 'No host'}
-                    </Text>
-                  </View>
-                  <Text style={styles.tourPrice}>${tour.price}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noToursContainer}>
+                <Text style={styles.noToursTitle}>No Tours Available</Text>
+                <Text style={styles.noToursText}>
+                  There are currently no tours available for this location.
+                  Please check back later or explore other locations.
+                </Text>
+                <TouchableOpacity
+                  style={styles.exploreButton}
+                  onPress={() => {
+                    setShowToursModal(false);
+                    router.push('/(app)/(tabs)/guidemigo');
+                  }}
+                >
+                  <Text style={styles.exploreButtonText}>
+                    Explore Other Tours
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -453,5 +479,37 @@ const styles = StyleSheet.create({
     fontFamily: 'InterBold',
     color: '#00BCD4',
     marginTop: 8,
+  },
+  noToursContainer: {
+    padding: 24,
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  noToursTitle: {
+    fontSize: 18,
+    fontFamily: 'InterBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  noToursText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  exploreButton: {
+    backgroundColor: '#00BCD4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  exploreButtonText: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#fff',
   },
 });

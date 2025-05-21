@@ -131,8 +131,11 @@ export default function TourDetail() {
     email: '',
     phone: '',
   });
+  console.log(tour, 'this is the tour');
 
   const handlePayment = () => {
+    if (!tour) return;
+
     setShowPaymentModal(false);
     Alert.alert(
       'Booking Confirmed!',
@@ -274,9 +277,14 @@ export default function TourDetail() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
-              <Text style={styles.payButtonText}>Pay ${tour.price}</Text>
-            </TouchableOpacity>
+            {tour && (
+              <TouchableOpacity
+                style={styles.payButton}
+                onPress={handlePayment}
+              >
+                <Text style={styles.payButtonText}>Pay ${tour.price}</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -304,16 +312,6 @@ export default function TourDetail() {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Tour not found</Text>
-      </View>
-    );
-  }
-
-  if (tour.status !== 'AVAILABLE') {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>
-          This tour is not available for booking
-        </Text>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -323,6 +321,42 @@ export default function TourDetail() {
       </View>
     );
   }
+
+  if (tour.status !== 'AVAILABLE') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image source={{ uri: tour.location.image }} style={styles.image} />
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft color="#fff" size={24} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.content}>
+          <Text style={styles.title}>{tour.title}</Text>
+          <View style={styles.unavailableContainer}>
+            <Text style={styles.unavailableText}>
+              This tour is not available for booking
+            </Text>
+            <Text style={styles.unavailableSubtext}>
+              The tour might be fully booked or has been cancelled
+            </Text>
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => router.push('/(app)/(tabs)/guidemigo')}
+            >
+              <Text style={styles.exploreButtonText}>Explore Other Tours</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Check if tour is fully booked
+  const isFullyBooked = tour._count.booking >= tour.maxSeats;
 
   return (
     <ScrollView style={styles.container}>
@@ -341,6 +375,11 @@ export default function TourDetail() {
         >
           <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>
+        {isFullyBooked && (
+          <View style={styles.fullyBookedBadge}>
+            <Text style={styles.fullyBookedText}>Fully Booked</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.content}>
@@ -440,10 +479,16 @@ export default function TourDetail() {
             <Text style={styles.price}>${tour.price}</Text>
           </View>
           <TouchableOpacity
-            style={styles.bookButton}
-            onPress={() => setShowPaymentModal(true)}
+            style={[
+              styles.bookButton,
+              isFullyBooked && styles.bookButtonDisabled,
+            ]}
+            onPress={() => !isFullyBooked && setShowPaymentModal(true)}
+            disabled={isFullyBooked}
           >
-            <Text style={styles.bookButtonText}>Book Now</Text>
+            <Text style={styles.bookButtonText}>
+              {isFullyBooked ? 'Fully Booked' : 'Book Now'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -696,5 +741,53 @@ const styles = StyleSheet.create({
     color: '#00BCD4',
     textAlign: 'center',
     marginTop: 16,
+  },
+  unavailableContainer: {
+    padding: 24,
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  unavailableText: {
+    fontSize: 18,
+    fontFamily: 'InterBold',
+    color: '#ff4444',
+    marginBottom: 8,
+  },
+  unavailableSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  exploreButton: {
+    backgroundColor: '#00BCD4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  exploreButtonText: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#fff',
+  },
+  fullyBookedBadge: {
+    position: 'absolute',
+    top: 48,
+    right: 16,
+    backgroundColor: 'rgba(255, 68, 68, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  fullyBookedText: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#fff',
+  },
+  bookButtonDisabled: {
+    backgroundColor: '#ccc',
   },
 });
