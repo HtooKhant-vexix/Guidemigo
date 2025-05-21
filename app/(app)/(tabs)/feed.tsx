@@ -128,12 +128,12 @@ const PostHeader = memo(({ user, location }: PostHeaderProps) => (
   <View style={styles.postHeader}>
     <TouchableOpacity
       style={styles.userInfo}
-      onPress={() =>
-        router.push({
-          pathname: '/(app)/profile/[id]',
-          params: { id: user.name },
-        })
-      }
+      // onPress={() =>
+      //   router.push({
+      //     pathname: '/(app)/profile/[id]',
+      //     params: { id: user.name },
+      //   })
+      // }
     >
       <Image
         source={{
@@ -187,12 +187,12 @@ const PostActions = memo(({ post, onLike }: PostActionsProps) => (
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() =>
-          router.push({
-            pathname: '/(app)/feed/post/[id]',
-            params: { id: post.id },
-          })
-        }
+        // onPress={() =>
+        //   router.push({
+        //     pathname: '/(app)/feed/post/[id]',
+        //     params: { id: post.id },
+        //   })
+        // }
       >
         <MessageCircle size={24} color="#666" />
         <Text style={styles.actionText}>{post.comments || 0}</Text>
@@ -209,8 +209,9 @@ const Post = memo(({ post, onLike }: PostProps) => (
     <PostHeader user={post} location={'singapore'} />
     <PostContent
       content={post.content}
-      images={'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6'}
-      onPress={() => router.push('/feed/post/' + post.id)}
+      // images={'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6'}
+      images={post?.image.length > 0 ? post?.image[0].url : ''}
+      // onPress={() => router.push('/feed/post/' + post.id)}
     />
     <PostActions post={post} onLike={onLike} />
     <View style={styles.postFooter}>
@@ -233,6 +234,7 @@ export default function Feed() {
 
   const [posts, setPosts] = useState(POSTS);
   // console.log('........', data[0].author.profile.name);
+  console.log(data[0]?.image[0].url, 'this is the data');
 
   const toggleLike = useCallback((postId: string) => {
     setPosts((currentPosts) =>
@@ -320,7 +322,7 @@ export default function Feed() {
       <ScrollView style={styles.container}>
         {headerContent}
         {/* {storiesContent} */}
-        {data.map((post) => (
+        {data.reverse().map((post) => (
           <Post key={post.id} post={post} onLike={toggleLike} />
         ))}
       </ScrollView>

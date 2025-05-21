@@ -26,6 +26,26 @@ type BookingStatus = 'upcoming' | 'completed';
 
 interface Booking extends Post {
   status: BookingStatus;
+  startTime: string;
+  endTime: string;
+  maxSeats: number;
+  host: {
+    id: number;
+    email: string;
+    profile?: {
+      name: string;
+      image: string;
+      rating: number;
+    };
+  };
+  location: {
+    id: number;
+    name: string;
+    image: string;
+  };
+  _count: {
+    booking: number;
+  };
 }
 
 const SkeletonBookingCard = () => {
@@ -123,7 +143,11 @@ export default function Bookings() {
     .filter((booking) => {
       if (activeFilter === 'all') return true;
       return booking.status === activeFilter;
-    });
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+    );
 
   const renderBookingCard = (booking: Booking) => (
     <TouchableOpacity

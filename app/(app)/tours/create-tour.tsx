@@ -111,8 +111,12 @@ export default function CreateTour() {
       // Send tour data
       await NewTour(tourData);
 
-      Alert.alert('Success', 'Tour created successfully!');
-      router.back(); // Navigate back to previous screen
+      Alert.alert('Success', 'Tour created successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(app)/(tabs)/feed'),
+        },
+      ]);
     } catch (error) {
       console.error('Error creating tour:', error);
       Alert.alert('Error', 'Failed to create tour. Please try again.');

@@ -146,7 +146,14 @@ export default function HostDetail() {
   const { tours } = useTours();
   const [showToursModal, setShowToursModal] = useState(false);
 
-  const hostTours = tours.filter((tour) => tour.host?.id === Number(id));
+  const hostTours = tours
+    .filter(
+      (tour) => tour.host?.id === Number(id) && tour.status === 'AVAILABLE'
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
 
   if (!host) {
     return (
@@ -155,6 +162,8 @@ export default function HostDetail() {
       </View>
     );
   }
+
+  console.log(review, 'this is the review');
 
   const renderToursModal = () => (
     <Modal
@@ -173,41 +182,47 @@ export default function HostDetail() {
           </View>
 
           <ScrollView style={styles.toursList}>
-            {hostTours.map((tour) => (
-              <TouchableOpacity
-                key={tour.id}
-                style={styles.tourCard}
-                onPress={() => {
-                  setShowToursModal(false);
-                  router.push(`/tours/${tour.id}`);
-                }}
-              >
-                <Image
-                  source={{
-                    uri:
-                      tour.location?.image ||
-                      'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+            {hostTours && hostTours.length > 0 ? (
+              hostTours.map((tour) => (
+                <TouchableOpacity
+                  key={tour.id}
+                  style={styles.tourCard}
+                  onPress={() => {
+                    setShowToursModal(false);
+                    router.push(`/tours/${tour.id}`);
                   }}
-                  style={styles.tourImage}
-                />
-                <View style={styles.tourInfo}>
-                  <Text style={styles.tourName}>{tour.title}</Text>
-                  <View style={styles.tourDetails}>
-                    <Calendar size={16} color="#00BCD4" />
-                    <Text style={styles.tourDate}>
-                      {tour.startTime?.slice(0, 10)}
-                    </Text>
+                >
+                  <Image
+                    source={{
+                      uri:
+                        tour.location?.image ||
+                        'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                    }}
+                    style={styles.tourImage}
+                  />
+                  <View style={styles.tourInfo}>
+                    <Text style={styles.tourName}>{tour.title}</Text>
+                    <View style={styles.tourDetails}>
+                      <Calendar size={16} color="#00BCD4" />
+                      <Text style={styles.tourDate}>
+                        {tour.startTime?.slice(0, 10)}
+                      </Text>
+                    </View>
+                    <View style={styles.tourDetails}>
+                      <MapPin size={16} color="#00BCD4" />
+                      <Text style={styles.tourLocation}>
+                        {tour.location?.name || 'No location'}
+                      </Text>
+                    </View>
+                    <Text style={styles.tourPrice}>${tour.price}</Text>
                   </View>
-                  <View style={styles.tourDetails}>
-                    <MapPin size={16} color="#00BCD4" />
-                    <Text style={styles.tourLocation}>
-                      {tour.location?.name || 'No location'}
-                    </Text>
-                  </View>
-                  <Text style={styles.tourPrice}>${tour.price}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>
+                No tours available at the moment
+              </Text>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -217,7 +232,16 @@ export default function HostDetail() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: host.image }} style={styles.image} />
+        <Image
+          source={
+            single_host?.image
+              ? {
+                  uri: single_host?.image,
+                }
+              : require('../../../assets/images/default.jpg')
+          }
+          style={styles.image}
+        />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -245,7 +269,7 @@ export default function HostDetail() {
           <View style={styles.stat}>
             <Users size={16} color="#00BCD4" />
             <Text style={styles.statText}>
-              {single_host?.travellers} Travelers
+              {single_host?.travelers || 0} Travelers
             </Text>
           </View>
           <View style={styles.stat}>
@@ -262,27 +286,48 @@ export default function HostDetail() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expertise</Text>
           <View style={styles.expertiseContainer}>
-            {single_host?.expertise.map((item, index) => (
-              <View key={index} style={styles.expertiseItem}>
-                <Text style={styles.expertiseText}>{item.name}</Text>
-              </View>
-            ))}
+            {single_host?.expertise && single_host.expertise.length > 0 ? (
+              single_host.expertise.map((item, index) => (
+                <View key={index} style={styles.expertiseItem}>
+                  <Text style={styles.expertiseText}>
+                    {typeof item === 'string' ? item : item.name}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>
+                No expertise areas specified yet
+              </Text>
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Reviews</Text>
-          {review.map((review) => (
-            <View key={review.id} style={styles.reviewCard}>
-              <View style={styles.reviewHeader}>
-                <Text style={styles.reviewUser}>
-                  {review.user.profile.name}
+          {review && review.length > 0 ? (
+            review.map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewUser}>
+                    {review.user?.profile?.name ||
+                      review.user?.email ||
+                      'Anonymous User'}
+                  </Text>
+                  <Text style={styles.reviewRating}>
+                    ★ {review.rating || 0}
+                  </Text>
+                </View>
+                <Text style={styles.reviewComment}>
+                  {review.comment || 'No comment provided'}
                 </Text>
-                <Text style={styles.reviewRating}>★ {review.rating}</Text>
+                <Text style={styles.reviewDate}>
+                  {new Date(review.createdAt).toLocaleDateString()}
+                </Text>
               </View>
-              <Text style={styles.reviewComment}>{review.comment}</Text>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={styles.noDataText}>No reviews yet</Text>
+          )}
         </View>
 
         <TouchableOpacity
@@ -408,6 +453,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     color: '#444',
   },
+  reviewDate: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    color: '#999',
+    marginTop: 8,
+  },
   bookButton: {
     backgroundColor: '#00BCD4',
     paddingVertical: 16,
@@ -488,5 +539,13 @@ const styles = StyleSheet.create({
     fontFamily: 'InterBold',
     color: '#00BCD4',
     marginTop: 8,
+  },
+  noDataText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    padding: 16,
   },
 });

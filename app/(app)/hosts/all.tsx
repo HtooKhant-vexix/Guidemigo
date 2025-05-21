@@ -84,17 +84,24 @@ export default function AllHosts() {
       </View>
 
       <FlatList
-        data={hosts}
+        data={hosts.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        )}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.hostCard}
-            onPress={() => router.push(`/hosts/${item.profile.id}`)}
+            onPress={() => router.push(`/hosts/${item.id}`)}
           >
             <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-              }}
+              source={
+                item.profile.image
+                  ? {
+                      uri: item.profile.image,
+                    }
+                  : require('../../../assets/images/default.jpg')
+              }
               style={styles.hostImage}
             />
             <View style={styles.hostInfo}>
@@ -102,23 +109,22 @@ export default function AllHosts() {
               <View style={styles.hostStats}>
                 <Users size={16} color="#00BCD4" />
                 <Text style={styles.hostStatsText}>
-                  {item.profile.travelers} Travelers
+                  {item.profile.travellers || 0} Travelers
                 </Text>
               </View>
               <Text style={styles.languages}>
-                {item.profile.languages.join(' • ')}
+                {item.profile.languages?.join(' • ') ||
+                  'No languages specified'}
               </Text>
               <View style={styles.specialtiesContainer}>
-                {item.profile.languages.map((specialty, index) => (
+                {item.profile.languages?.map((specialty, index) => (
                   <View key={index} style={styles.specialtyTag}>
                     <Text style={styles.specialtyText}>{specialty}</Text>
                   </View>
-                ))}
+                )) || null}
               </View>
               <View style={styles.ratingContainer}>
-                <Text style={styles.rating}>
-                  ★ {item.profile.rating ? item.profile.rating : 3}
-                </Text>
+                <Text style={styles.rating}>★ {item.profile.rating || 0}</Text>
               </View>
             </View>
           </TouchableOpacity>
