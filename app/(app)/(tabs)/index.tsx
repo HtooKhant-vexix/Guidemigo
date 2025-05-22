@@ -240,7 +240,14 @@ export default function Home() {
           style={styles.hostsList}
         >
           {ads.map((host) => (
-            <TouchableOpacity key={host.id} style={styles.ads}>
+            <TouchableOpacity
+              key={host.id}
+              style={styles.ads}
+              onPress={async () => {
+                const tokens = await AsyncStorage.getItem('tokens');
+                console.log(tokens);
+              }}
+            >
               <Image source={host.image} style={styles.adsImage} />
             </TouchableOpacity>
           ))}

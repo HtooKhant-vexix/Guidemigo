@@ -27,6 +27,8 @@ export default function RootLayout() {
     InterBold: Inter_700Bold,
   });
 
+  console.log(isAuthenticated, segments, '...test...');
+
   useEffect(() => {
     const prepare = async () => {
       try {

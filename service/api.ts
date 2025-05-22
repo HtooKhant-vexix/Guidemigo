@@ -350,3 +350,8 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const fetchUserBookings = async () => {
+  const { data } = await api.get('/booking');
+  return data;
+};

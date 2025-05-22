@@ -131,8 +131,13 @@ const tokenManager = {
   },
 
   async setTokens(tokens: AuthTokens): Promise<void> {
+    // console.log(tokens);
     try {
-      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+      const tt = await AsyncStorage.setItem(
+        TOKEN_STORAGE_KEY,
+        JSON.stringify(tokens)
+      );
+      console.log(tt, 'this is isisiissisissiisissisi');
     } catch (error) {
       console.error('Error setting tokens:', error);
       throw error;
@@ -293,6 +298,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async (tokens: AuthTokens) => {
     try {
       set({ isLoading: true, error: null });
+      console.log('====================================');
+      console.log(tokens);
+      console.log('====================================');
 
       // Check if we have any tokens to work with
       if (!tokens) {
@@ -318,6 +326,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             // Update storage with new tokens
             await tokenManager.setTokens(newTokens);
+            console.log(responseData.data.user, '......................');
 
             // Update state with validated tokens and user
             set({
@@ -377,6 +386,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           accessToken: response.data.data.accessToken,
           refreshToken: response.data.data.refreshToken,
         };
+        console.log('======sdsd==============================');
+        console.log(tokens);
+        console.log('======sdsd==============================');
 
         await tokenManager.setTokens(tokens);
         set({

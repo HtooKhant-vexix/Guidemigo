@@ -19,14 +19,49 @@ import {
   Search,
 } from 'lucide-react-native';
 import { useState, useEffect, useRef } from 'react';
-import { useTours } from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
 import { Post } from '@/types/api';
+import { fetchUserBookings } from '@/service/api';
 
 type BookingStatus = 'upcoming' | 'completed';
 
-interface Booking extends Omit<Post, 'status'> {
+interface TourBooking {
+  id: number;
+  title: string;
+  description: string;
+  price: string;
+  startTime: string;
+  endTime: string;
+  maxSeats: number;
   status: BookingStatus;
+  host: {
+    id: number;
+    email: string;
+    profile?: {
+      name: string;
+      image: string;
+    };
+  };
+  location: {
+    id: number;
+    name: string;
+    image: string;
+  };
+  _count: {
+    booking: number;
+  };
+}
+
+interface Booking {
+  id: number;
+  status: string;
+  tour: TourBooking;
+}
+
+interface BookingResponse {
+  success: boolean;
+  message: string;
+  data: Booking[];
 }
 
 const SkeletonBookingCard = () => {
@@ -114,18 +149,35 @@ export default function Bookings() {
   const [activeFilter, setActiveFilter] = useState<BookingStatus | 'all'>(
     'all'
   );
-  const { tours, loading, error } = useTours();
+  const [bookings, setBookings] = useState<TourBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const filteredBookings = tours
-    .filter((tour) => tour.hostId === user?.id)
-    .map(
-      (tour) =>
-        ({
-          ...tour,
-          status: tour.status === 'AVAILABLE' ? 'upcoming' : 'completed',
-        } as Booking)
-    )
+  useEffect(() => {
+    async function loadBookings() {
+      try {
+        const response = (await fetchUserBookings()) as BookingResponse;
+        const userBookings = response.data.map((booking) => ({
+          ...booking.tour,
+          status: (new Date(booking.tour.startTime) > new Date()
+            ? 'upcoming'
+            : 'completed') as BookingStatus,
+        }));
+        setBookings(userBookings);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load bookings');
+        console.error('Error loading bookings:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBookings();
+  }, []);
+
+  const filteredBookings = bookings
     .filter((booking) => {
       if (activeFilter === 'all') return true;
       return booking.status === activeFilter;
@@ -135,9 +187,11 @@ export default function Bookings() {
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
     );
 
-  const renderBookingCard = (booking: Booking) => (
+  console.log(bookings, 'this is bookings');
+
+  const renderBookingCard = (booking: TourBooking, index: number) => (
     <TouchableOpacity
-      key={booking.id}
+      key={`${booking.id}-${booking.startTime}-${index}`}
       style={[
         styles.bookingCard,
         booking.status === 'upcoming' && styles.upcomingCard,
@@ -385,7 +439,9 @@ export default function Bookings() {
             <Text style={styles.emptyText}>No bookings found</Text>
           </View>
         ) : (
-          filteredBookings.map(renderBookingCard)
+          filteredBookings.map((booking, index) =>
+            renderBookingCard(booking, index)
+          )
         )}
       </View>
     </ScrollView>

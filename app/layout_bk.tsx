@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Slot, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -10,8 +10,8 @@ import {
 } from '@expo-google-fonts/inter';
 import { useAuth } from '../hooks/useAuth';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { View } from 'react-native';
 
+// Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* reloading the app might trigger some race conditions, ignore them */
 });
@@ -60,7 +60,7 @@ export default function RootLayout() {
   }, [isAuthenticated, segments, isLoading, fontsLoaded]);
 
   if (!fontsLoaded && !fontError) {
-    return <View />;
+    return null;
   }
 
   return (

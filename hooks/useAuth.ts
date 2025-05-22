@@ -21,6 +21,8 @@ export function useAuth() {
     const initAuth = async () => {
       try {
         const tokens = await AsyncStorage.getItem('tokens');
+        const re_tokens = await AsyncStorage.getItem('tokens');
+        console.log(tokens);
         if (tokens) {
           const parsedTokens = JSON.parse(tokens);
           await initializeAuth(parsedTokens);

@@ -25,9 +25,11 @@ import {
   Phone,
 } from 'lucide-react-native';
 import { useTour } from '@/hooks/useData';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
 import { Skeleton, SkeletonText } from '@/components/Skeleton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/hooks/useAuth';
 
 const TOURS = {
   '1': {
@@ -123,7 +125,10 @@ const TOURS = {
 export default function TourDetail() {
   const { id } = useLocalSearchParams();
   const { tour, loading, error } = useTour(Number(id));
+  const { user } = useAuth();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [hasBooked, setHasBooked] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState({
     cardNumber: '',
     expiryDate: '',
@@ -132,26 +137,106 @@ export default function TourDetail() {
     email: '',
     phone: '',
   });
-  console.log(tour, 'this is the tour');
 
-  const handlePayment = () => {
+  useEffect(() => {
+    async function checkUserBooking() {
+      if (!tour || !user) return;
+
+      try {
+        const tokenString = await AsyncStorage.getItem('tokens');
+        if (!tokenString) return;
+
+        const tokens = JSON.parse(tokenString);
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/booking`,
+          {
+            headers: {
+              Authorization: `Bearer ${tokens.accessToken}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (data.success) {
+          const userBookings = data.data;
+          const hasBookedThisTour = userBookings.some(
+            (booking: any) => booking.tour.id === tour.id
+          );
+          setHasBooked(hasBookedThisTour);
+        }
+      } catch (error) {
+        console.error('Error checking user booking:', error);
+      }
+    }
+
+    checkUserBooking();
+  }, [tour, user]);
+
+  const handlePayment = async () => {
     if (!tour) return;
 
-    setShowPaymentModal(false);
-    Alert.alert(
-      'Booking Confirmed!',
-      'Your tour has been successfully booked. You will receive a confirmation email shortly.',
-      [
+    try {
+      setIsProcessing(true);
+      const tokenString = await AsyncStorage.getItem('tokens');
+
+      if (!tokenString) {
+        throw new Error('Authentication token not found');
+      }
+
+      const tokens = JSON.parse(tokenString);
+      if (!tokens?.accessToken) {
+        throw new Error('Invalid token format');
+      }
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/booking`,
         {
-          text: 'View My Bookings',
-          onPress: () => router.push('/bookings'),
-        },
-        {
-          text: 'OK',
-          onPress: () => router.push('/(app)/(tabs)'),
-        },
-      ]
-    );
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokens.accessToken}`,
+          },
+          body: JSON.stringify({
+            tourId: tour.id,
+            status: 'PENDING',
+            message: 'Booking created through payment',
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create booking');
+      }
+
+      setShowPaymentModal(false);
+      Alert.alert(
+        'Booking Confirmed!',
+        'Your tour has been successfully booked. You will receive a confirmation email shortly.',
+        [
+          {
+            text: 'View My Bookings',
+            onPress: () => router.push('/bookings'),
+          },
+          {
+            text: 'OK',
+            onPress: () => router.push('/(app)/(tabs)'),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Booking error:', error);
+      Alert.alert(
+        'Booking Failed',
+        error instanceof Error
+          ? error.message
+          : 'There was an error processing your booking. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const renderPaymentModal = () => (
@@ -280,10 +365,18 @@ export default function TourDetail() {
 
             {tour && (
               <TouchableOpacity
-                style={styles.payButton}
+                style={[
+                  styles.payButton,
+                  isProcessing && styles.payButtonDisabled,
+                ]}
                 onPress={handlePayment}
+                disabled={isProcessing}
               >
-                <Text style={styles.payButtonText}>Pay ${tour.price}</Text>
+                {isProcessing ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.payButtonText}>Pay ${tour.price}</Text>
+                )}
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -530,13 +623,19 @@ export default function TourDetail() {
           <TouchableOpacity
             style={[
               styles.bookButton,
-              isFullyBooked && styles.bookButtonDisabled,
+              (isFullyBooked || hasBooked) && styles.bookButtonDisabled,
             ]}
-            onPress={() => !isFullyBooked && setShowPaymentModal(true)}
-            disabled={isFullyBooked}
+            onPress={() =>
+              !isFullyBooked && !hasBooked && setShowPaymentModal(true)
+            }
+            disabled={isFullyBooked || hasBooked}
           >
             <Text style={styles.bookButtonText}>
-              {isFullyBooked ? 'Fully Booked' : 'Book Now'}
+              {isFullyBooked
+                ? 'Fully Booked'
+                : hasBooked
+                ? 'Already Booked'
+                : 'Book Now'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -820,6 +919,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     marginBottom: 16,
+  },
+  payButtonDisabled: {
+    backgroundColor: '#cccccc',
+    opacity: 0.7,
   },
   payButtonText: {
     fontSize: 16,
