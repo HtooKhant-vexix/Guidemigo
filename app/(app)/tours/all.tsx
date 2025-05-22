@@ -53,7 +53,7 @@ export default function AllTours() {
           <Text style={styles.headerTitle}>All Tours</Text>
         </View>
         <View style={styles.toursList}>
-          {Array.from({ length: 3 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_, index) => (
             <SkeletonHostCard key={index} />
           ))}
         </View>

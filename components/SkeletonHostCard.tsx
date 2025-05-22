@@ -30,6 +30,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
+    marginVertical: 10,
     marginHorizontal: 10,
     shadowOffset: {
       width: 0,
