@@ -458,15 +458,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         refreshToken: response.data.data.refreshToken,
       };
 
+      // Store tokens first
       await tokenManager.setTokens(tokens);
+
+      // Then update state
       set({
         user: response.data.data.user,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         isAuthenticated: true,
         isLoading: false,
+        error: null,
       });
     } catch (error) {
+      // Clear tokens on error
+      await tokenManager.clearTokens();
       set({
         error: error instanceof Error ? error.message : 'Failed to login',
         isLoading: false,
@@ -503,10 +509,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Only set loading state to false
       set({
         isLoading: false,
+        error: null,
       });
 
       return tokens;
     } catch (error) {
+      // Clear tokens on error
+      await tokenManager.clearTokens();
       set({
         error: error instanceof Error ? error.message : 'Failed to register',
         isLoading: false,
@@ -577,10 +586,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         refreshToken: token.refreshToken,
         isAuthenticated: true,
         isLoading: false,
+        error: null,
       });
 
       return { success: true, data: response.data };
     } catch (error) {
+      // Clear tokens on error
+      await tokenManager.clearTokens();
       set({
         error:
           error instanceof Error ? error.message : 'Failed to update profile',
@@ -596,17 +608,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
+      // Clear tokens first
       await tokenManager.clearTokens();
+
+      // Then update state
       set({
         user: null,
         accessToken: null,
         refreshToken: null,
         isAuthenticated: false,
         error: null,
+        isLoading: false,
       });
     } catch (error) {
       console.error('Logout error:', error);
-      set({ error: 'Failed to logout' });
+      set({
+        error: 'Failed to logout',
+        isLoading: false,
+      });
     }
   },
 

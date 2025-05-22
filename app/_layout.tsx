@@ -51,11 +51,19 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inAppGroup = segments[0] === '(app)';
+    const isWelcomeScreen = segments[0] === 'welcome';
 
-    if (!isAuthenticated && !inAuthGroup && segments[0] !== 'welcome') {
-      router.replace('/welcome');
-    } else if (isAuthenticated && (inAuthGroup || segments[0] === 'welcome')) {
-      router.replace('/(app)/(tabs)');
+    // Handle initial app load and authentication state
+    if (!isAuthenticated) {
+      // If not authenticated and not in auth group or welcome screen, redirect to welcome
+      if (!inAuthGroup && !isWelcomeScreen) {
+        router.replace('/welcome');
+      }
+    } else {
+      // If authenticated and in auth group or welcome screen, redirect to app
+      if (inAuthGroup || isWelcomeScreen) {
+        router.replace('/(app)/(tabs)');
+      }
     }
   }, [isAuthenticated, segments, isLoading, fontsLoaded]);
 
