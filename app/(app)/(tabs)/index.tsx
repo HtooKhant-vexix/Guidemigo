@@ -175,7 +175,7 @@ export default function Home() {
         </View>
 
         {/* Skeleton Best Places Section */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.skeletonSectionTitle} />
             <View style={styles.skeletonViewAllButton} />
@@ -185,7 +185,7 @@ export default function Home() {
               <SkeletonPlaceCard key={index} />
             ))}
           </ScrollView>
-        </View>
+        </View> */}
       </ScrollView>
     );
   }
