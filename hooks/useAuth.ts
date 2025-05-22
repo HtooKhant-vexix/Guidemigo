@@ -16,7 +16,8 @@ export function useAuth() {
     initializeAuth,
     isAuthenticated,
   } = useAuthStore();
-
+  const segments = useSegments();
+  const inAuthGroup = segments[0] === '(auth)';
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -38,7 +39,7 @@ export function useAuth() {
       }
     };
 
-    initAuth();
+    !inAuthGroup && initAuth();
   }, []);
 
   const handleLogout = async () => {

@@ -497,14 +497,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         refreshToken: response.data.data.refreshToken,
       };
 
+      // Store tokens but don't set authentication state yet
       await tokenManager.setTokens(tokens);
+
+      // Only set loading state to false
       set({
-        user: response.data.data.user,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        isAuthenticated: true,
         isLoading: false,
       });
+
       return tokens;
     } catch (error) {
       set({
@@ -570,19 +570,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Store both tokens
       await tokenManager.setTokens(token);
 
+      // Set authentication state after successful setup
       set({
         user: response.data.user,
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
+        isAuthenticated: true,
         isLoading: false,
       });
 
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
       set({
         error:
           error instanceof Error ? error.message : 'Failed to update profile',
         isLoading: false,
+        isAuthenticated: false,
+        user: null,
+        accessToken: null,
+        refreshToken: null,
       });
       throw error;
     }

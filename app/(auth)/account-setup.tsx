@@ -23,6 +23,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocalSearchParams } from 'expo-router';
 // import * as ImagePicker from 'expo-image-picker';
 
+interface SetupToken {
+  accessToken: string;
+  refreshToken: string;
+  user: string;
+}
+
 export default function AccountSetup() {
   const [profileType, setProfileType] = useState<'host' | 'traveller'>(
     'traveller'
@@ -193,7 +199,6 @@ export default function AccountSetup() {
   // };
 
   const handleSubmit = async () => {
-    // console.log('clicked', token);
     const result = profileSchema.safeParse(formValues);
 
     if (!result.success) {
@@ -201,17 +206,28 @@ export default function AccountSetup() {
       const fieldErrors = result.error.flatten().fieldErrors;
       setErrors(fieldErrors);
     } else {
-      const response = await setup(
-        {
-          ...formValues,
-          id: token?.user,
-        },
-        token
-      );
-      response.success && router.replace('/(app)/(tabs)');
-      // console.log('Response:', response);
-      // Validation passed — continue to next screen
-      // router.replace('/(app)/(tabs)');
+      try {
+        const authTokens = {
+          accessToken: token.accessToken as string,
+          refreshToken: token.refreshToken as string,
+        };
+
+        const response = await setup(
+          {
+            ...formValues,
+            id: token.user,
+          },
+          authTokens
+        );
+
+        if (response?.success) {
+          // Navigate to home page after successful setup
+          router.replace('/(app)/(tabs)');
+        }
+      } catch (error) {
+        console.error('Setup error:', error);
+        // Handle setup error if needed
+      }
     }
   };
 
