@@ -21,12 +21,17 @@ export function useAuth() {
     const initAuth = async () => {
       try {
         const tokens = await AsyncStorage.getItem('tokens');
-        const re_tokens = await AsyncStorage.getItem('tokens');
-        console.log(tokens);
-        if (tokens) {
-          const parsedTokens = JSON.parse(tokens);
-          await initializeAuth(parsedTokens);
+        if (!tokens) return;
+
+        const parsedTokens = JSON.parse(tokens);
+        // Validate tokens before initializing
+        if (!parsedTokens.accessToken || !parsedTokens.refreshToken) {
+          console.error('Invalid tokens found in storage');
+          await AsyncStorage.removeItem('tokens');
+          return;
         }
+
+        await initializeAuth(parsedTokens);
       } catch (error) {
         console.error('Auth initialization error:', error);
         await AsyncStorage.removeItem('tokens');
@@ -66,7 +71,7 @@ export function useAuth() {
   }) => {
     try {
       const tokens = await register(data);
-      if (tokens) {
+      if (tokens && tokens.accessToken && tokens.refreshToken) {
         await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
         return tokens;
       }

@@ -62,10 +62,15 @@ const api = axios.create({
 // Enhanced types for better type safety
 interface TokenRefreshResponse {
   success: boolean;
+  message: string;
   data: {
     accessToken: string;
-    refreshToken: string;
-    user: User;
+    user: {
+      email: string;
+      id: number;
+      refresh: string;
+      role: string | null;
+    };
   };
 }
 
@@ -123,7 +128,16 @@ const tokenManager = {
   async getTokens(): Promise<AuthTokens | null> {
     try {
       const tokens = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-      return tokens ? JSON.parse(tokens) : null;
+      if (!tokens) return null;
+
+      const parsedTokens = JSON.parse(tokens);
+      // Validate tokens before returning
+      if (!parsedTokens.accessToken || !parsedTokens.refreshToken) {
+        console.error('Invalid tokens in storage');
+        await this.clearTokens();
+        return null;
+      }
+      return parsedTokens;
     } catch (error) {
       console.error('Error getting tokens:', error);
       return null;
@@ -131,13 +145,14 @@ const tokenManager = {
   },
 
   async setTokens(tokens: AuthTokens): Promise<void> {
-    // console.log(tokens);
     try {
-      const tt = await AsyncStorage.setItem(
-        TOKEN_STORAGE_KEY,
-        JSON.stringify(tokens)
-      );
-      console.log(tt, 'this is isisiissisissiisissisi');
+      // Validate tokens before storing
+      if (!tokens.accessToken || !tokens.refreshToken) {
+        throw new Error(
+          'Invalid tokens: both accessToken and refreshToken are required'
+        );
+      }
+      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
     } catch (error) {
       console.error('Error setting tokens:', error);
       throw error;
@@ -228,13 +243,17 @@ api.interceptors.response.use(
       });
 
       const responseData = response.data as TokenRefreshResponse;
-      if (!responseData.success) {
-        throw new Error('Token refresh failed');
+      if (
+        !responseData.success ||
+        !responseData.data.accessToken ||
+        !responseData.data.user?.refresh
+      ) {
+        throw new Error('Invalid token refresh response');
       }
 
       const newTokens = {
         accessToken: responseData.data.accessToken,
-        refreshToken: responseData.data.refreshToken,
+        refreshToken: responseData.data.user.refresh,
       };
 
       // Update tokens in storage first
@@ -259,15 +278,14 @@ api.interceptors.response.use(
       // Only logout if the refresh token is expired (401)
       if (
         refreshError.response?.status === 401 ||
-        refreshError.message === 'No refresh token available'
+        refreshError.message === 'No refresh token available' ||
+        refreshError.message === 'Invalid token refresh response'
       ) {
-        refreshQueue.process(refreshError, null);
-        await tokenManager.clearTokens();
-        await useAuthStore.getState().logout();
-      } else {
-        // For other errors, just reject the request
-        refreshQueue.process(refreshError, null);
+        // Handle invalid token response
       }
+      refreshQueue.process(refreshError, null);
+      await tokenManager.clearTokens();
+      await useAuthStore.getState().logout();
       return Promise.reject(refreshError);
     } finally {
       refreshQueue.setRefreshing(false);
@@ -284,6 +302,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
 
   setTokens: (tokens: AuthTokens) => {
+    if (!tokens?.accessToken || !tokens?.refreshToken) {
+      console.error(
+        'Invalid tokens: both accessToken and refreshToken are required'
+      );
+      return;
+    }
     set({
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -298,64 +322,104 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async (tokens: AuthTokens) => {
     try {
       set({ isLoading: true, error: null });
-      console.log('====================================');
-      console.log(tokens);
-      console.log('====================================');
 
-      // Check if we have any tokens to work with
-      if (!tokens) {
-        throw new Error('No tokens provided');
+      // Validate tokens
+      if (!tokens?.accessToken || !tokens?.refreshToken) {
+        throw new Error(
+          'Invalid tokens: both accessToken and refreshToken are required'
+        );
       }
 
-      // Store whatever tokens we have
+      // Store tokens
       await tokenManager.setTokens(tokens);
 
-      // Only attempt validation if we have a refresh token
-      if (tokens.refreshToken) {
-        try {
-          const response = await api.post(REFRESH_ENDPOINT, {
-            refreshToken: tokens.refreshToken,
-          });
+      try {
+        console.log(
+          'Attempting token refresh with token:',
+          tokens.refreshToken
+        );
 
-          const responseData = response.data as TokenRefreshResponse;
-          if (responseData.success) {
-            const newTokens = {
-              accessToken: responseData.data.accessToken,
-              refreshToken: responseData.data.refreshToken,
-            };
-
-            // Update storage with new tokens
-            await tokenManager.setTokens(newTokens);
-            console.log(responseData.data.user, '......................');
-
-            // Update state with validated tokens and user
-            set({
-              user: responseData.data.user,
-              isAuthenticated: true,
-              accessToken: newTokens.accessToken,
-              refreshToken: newTokens.refreshToken,
-              isLoading: false,
-              error: null,
-            });
-            return;
-          }
-        } catch (error) {
-          console.warn('Token validation failed:', error);
-          // Don't throw here, fall through to use existing tokens
-        }
-      }
-
-      // If we have an access token but validation failed or wasn't attempted,
-      // still set the state with what we have
-      if (tokens.accessToken) {
-        set({
-          isAuthenticated: true,
-          accessToken: tokens.accessToken,
+        const response = await api.post(REFRESH_ENDPOINT, {
           refreshToken: tokens.refreshToken,
+        });
+
+        console.log(
+          'Raw token refresh response:',
+          JSON.stringify(response.data, null, 2)
+        );
+
+        // First check if response.data exists and is an object
+        if (!response.data || typeof response.data !== 'object') {
+          console.error('Invalid response data:', response.data);
+          throw new Error('Invalid token refresh response structure');
+        }
+
+        const responseData = response.data as TokenRefreshResponse;
+        console.log(
+          'Parsed response data:',
+          JSON.stringify(responseData, null, 2)
+        );
+
+        // Check if response has success flag
+        if (!responseData.success) {
+          console.error('Token refresh failed:', responseData.message);
+          throw new Error(
+            responseData.message || 'Token refresh request failed'
+          );
+        }
+
+        // Check if response has data object
+        if (!responseData.data || typeof responseData.data !== 'object') {
+          console.error('Invalid response data structure:', responseData);
+          throw new Error('Invalid token refresh response data');
+        }
+
+        // Check if both tokens are present
+        if (
+          !responseData.data.accessToken ||
+          !responseData.data.user?.refresh
+        ) {
+          console.error('Missing tokens in response data:', responseData.data);
+          throw new Error('Missing tokens in refresh response');
+        }
+
+        const newTokens = {
+          accessToken: responseData.data.accessToken,
+          refreshToken: responseData.data.user.refresh,
+        };
+
+        console.log('New tokens received:', {
+          accessToken: newTokens.accessToken.substring(0, 10) + '...',
+          refreshToken: newTokens.refreshToken.substring(0, 10) + '...',
+        });
+
+        // Update storage with new tokens
+        await tokenManager.setTokens(newTokens);
+
+        // Update state with validated tokens and user
+        set({
+          user: responseData.data.user,
+          isAuthenticated: true,
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken,
           isLoading: false,
           error: null,
         });
         return;
+      } catch (error) {
+        console.warn('Token validation failed:', error);
+        // If validation fails, still try to use the provided tokens
+        if (tokens.accessToken && tokens.refreshToken) {
+          console.log('Using provided tokens after validation failure');
+          set({
+            isAuthenticated: true,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
       }
 
       // If we get here, we have no valid tokens
@@ -381,26 +445,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
       const response = await api.post<AuthResponse>('/auth/login', credentials);
 
-      if (response.data.success) {
-        const tokens = {
-          accessToken: response.data.data.accessToken,
-          refreshToken: response.data.data.refreshToken,
-        };
-        console.log('======sdsd==============================');
-        console.log(tokens);
-        console.log('======sdsd==============================');
-
-        await tokenManager.setTokens(tokens);
-        set({
-          user: response.data.data.user,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
-        throw new Error('Login failed');
+      if (
+        !response.data.success ||
+        !response.data.data.accessToken ||
+        !response.data.data.refreshToken
+      ) {
+        throw new Error('Invalid login response: missing tokens');
       }
+
+      const tokens = {
+        accessToken: response.data.data.accessToken,
+        refreshToken: response.data.data.refreshToken,
+      };
+
+      await tokenManager.setTokens(tokens);
+      set({
+        user: response.data.data.user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to login',
@@ -419,24 +484,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
       const response = await api.post<AuthResponse>('/auth/register', data);
 
-      if (response.data.success) {
-        const tokens = {
-          accessToken: response.data.data.accessToken,
-          refreshToken: response.data.data.refreshToken,
-        };
-
-        await tokenManager.setTokens(tokens);
-        set({
-          user: response.data.data.user,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        return tokens;
-      } else {
-        throw new Error('Registration failed');
+      if (
+        !response.data.success ||
+        !response.data.data.accessToken ||
+        !response.data.data.refreshToken
+      ) {
+        throw new Error('Invalid registration response: missing tokens');
       }
+
+      const tokens = {
+        accessToken: response.data.data.accessToken,
+        refreshToken: response.data.data.refreshToken,
+      };
+
+      await tokenManager.setTokens(tokens);
+      set({
+        user: response.data.data.user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      return tokens;
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to register',
@@ -453,6 +522,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setup: async (data, token) => {
     try {
       set({ isLoading: true, error: null });
+
+      // Validate tokens before using
+      if (!token.accessToken || !token.refreshToken) {
+        throw new Error(
+          'Invalid tokens: both accessToken and refreshToken are required'
+        );
+      }
+
       const formData = new FormData();
       formData.append('id', data.id);
       formData.append('name', data.name);
@@ -490,7 +567,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       );
 
-      await AsyncStorage.setItem('tokens', JSON.stringify(token));
+      // Store both tokens
+      await tokenManager.setTokens(token);
+
       set({
         user: response.data.user,
         accessToken: token.accessToken,
