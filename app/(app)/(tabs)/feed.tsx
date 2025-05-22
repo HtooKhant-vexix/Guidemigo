@@ -83,22 +83,39 @@ const POSTS = [
 
 interface PostProps {
   post: {
-    id: string;
+    id: number;
     content: string;
-    name: string;
-    avatar: string;
-    isVerified?: boolean;
+    author: {
+      id: number;
+      email: string;
+      profile: {
+        name: string;
+        image: string;
+      };
+    };
+    image: Array<{ url: string }>;
+    location: string | null;
+    createdAt: string;
+    _count: {
+      comments: number;
+      likes: number;
+      shares: number;
+    };
   };
   onLike: (postId: string) => void;
 }
 
 interface PostHeaderProps {
   user: {
-    name: string;
-    avatar: string;
+    author: {
+      profile: {
+        name: string;
+        image: string;
+      };
+    };
     isVerified?: boolean;
   };
-  location: string;
+  location: string | null;
 }
 
 interface PostContentProps {
@@ -114,11 +131,12 @@ interface PostActionsProps {
 
 interface StoryProps {
   story: {
-    id: string;
-    user: {
-      name: string;
-      avatar: string;
-      isVerified: boolean;
+    id: number;
+    author: {
+      profile: {
+        name: string;
+        image: string;
+      };
     };
   };
   onPress: () => void;
@@ -152,10 +170,12 @@ const PostHeader = memo(({ user, location }: PostHeaderProps) => (
             </View>
           )}
         </View>
-        <View style={styles.locationContainer}>
-          <MapPin size={12} color="#666" />
-          <Text style={styles.location}>{location}</Text>
-        </View>
+        {location && (
+          <View style={styles.locationContainer}>
+            <MapPin size={12} color="#666" />
+            <Text style={styles.location}>{location}</Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
     <TouchableOpacity>
@@ -209,9 +229,8 @@ const Post = memo(({ post, onLike }: PostProps) => (
     <PostHeader user={post} location={'singapore'} />
     <PostContent
       content={post.content}
-      // images={'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6'}
-      images={post?.image.length > 0 ? post?.image[0].url : ''}
-      // onPress={() => router.push('/feed/post/' + post.id)}
+      images={post?.image?.length > 0 ? post?.image[0].url : ''}
+      onPress={() => {}}
     />
     <PostActions post={post} onLike={onLike} />
     <View style={styles.postFooter}>
@@ -222,9 +241,12 @@ const Post = memo(({ post, onLike }: PostProps) => (
 
 const Story = memo(({ story, onPress }: StoryProps) => (
   <TouchableOpacity style={styles.storyButton} onPress={onPress}>
-    <Image source={{ uri: story.user.avatar }} style={styles.storyAvatar} />
+    <Image
+      source={{ uri: story.author.profile.image }}
+      style={styles.storyAvatar}
+    />
     <Text style={styles.storyName} numberOfLines={1}>
-      {story.user.name.split(' ')[0]}
+      {story.author.profile.name.split(' ')[0]}
     </Text>
   </TouchableOpacity>
 ));
@@ -233,8 +255,8 @@ export default function Feed() {
   const { posts: data, loading, error, handleLike } = usePosts();
 
   const [posts, setPosts] = useState(POSTS);
-  // console.log('........', data[0].author.profile.name);
-  console.log(data[0]?.image[0].url, 'this is the data');
+  console.log('........', data[0]);
+  // console.log(data[0]?.image[0].url, 'this is the data');
 
   const toggleLike = useCallback((postId: string) => {
     setPosts((currentPosts) =>
@@ -280,17 +302,22 @@ export default function Feed() {
             </View>
             <Text style={styles.addStoryText}>Add Story</Text>
           </TouchableOpacity>
-          {posts.map((post) => (
+          {data.map((post) => (
             <Story
               key={post.id}
               story={post}
-              onPress={() => router.push(`/feed/story/${post.id}`)}
+              onPress={() =>
+                router.push({
+                  pathname: '/(app)/feed/story/[id]',
+                  params: { id: post.id.toString() },
+                })
+              }
             />
           ))}
         </ScrollView>
       </View>
     ),
-    [posts]
+    [data]
   );
   const renderContent = () => {
     if (loading) {
@@ -346,6 +373,7 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 24,

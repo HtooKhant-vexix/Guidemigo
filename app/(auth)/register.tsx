@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { ArrowLeft, Calendar, Eye, EyeOff } from 'lucide-react-native';
@@ -17,6 +18,7 @@ export default function Register() {
   const [profileType, setProfileType] = useState<'personal' | 'business'>(
     'personal'
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [interests, setInterests] = useState({
     findingHosts: true,
@@ -26,35 +28,58 @@ export default function Register() {
   const { register, isLoading, error, clearError, user } = useAuth();
 
   const handleRegister = async () => {
-    const result = profileSchema.safeParse(formValues);
-    if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
-      setErrors(fieldErrors);
-    } else {
+    try {
+      setIsSubmitting(true);
+      clearError();
+
+      const result = profileSchema.safeParse(formValues);
+      if (!result.success) {
+        const fieldErrors = result.error.flatten().fieldErrors;
+        setErrors(fieldErrors);
+        return;
+      }
+
       const tokens = await register({
         email: formValues.email,
         password: formValues.password,
-        name: 'test',
+        name: formValues.email.split('@')[0], // Use part of email as name
         type: 'traveller',
       });
 
-      if (tokens !== undefined && tokens !== null) {
-        console.log(tokens, 'tokens*******************************');
+      if (tokens?.accessToken && tokens?.refreshToken) {
         router.replace({
           pathname: '/account-setup',
-          params: tokens,
+          params: {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+          },
         });
       } else {
-        console.error('Registration failed: No tokens returned');
+        Alert.alert(
+          'Registration Failed',
+          'Unable to complete registration. Please try again.',
+          [{ text: 'OK' }]
+        );
       }
+    } catch (err) {
+      console.error('Registration error:', err);
+      Alert.alert(
+        'Registration Error',
+        'An error occurred during registration. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const profileSchema = z
     .object({
-      email: z.string().email(),
-      password: z.string().min(4),
-      confirmPassword: z.string().min(4),
+      email: z.string().email('Please enter a valid email address'),
+      password: z.string().min(6, 'Password must be at least 6 characters'),
+      confirmPassword: z
+        .string()
+        .min(6, 'Password must be at least 6 characters'),
     })
     .refine((data) => data.password === data.confirmPassword, {
       path: ['confirmPassword'],
@@ -103,7 +128,7 @@ export default function Register() {
               }
             />
             {errors?.email && (
-              <Text style={{ color: 'red' }}>{errors?.email[0]}</Text>
+              <Text style={styles.errorText}>{errors?.email[0]}</Text>
             )}
           </View>
 
@@ -169,7 +194,7 @@ export default function Register() {
               </TouchableOpacity>
             </View>
             {errors?.password && (
-              <Text style={{ color: 'red' }}>{errors?.password[0]}</Text>
+              <Text style={styles.errorText}>{errors?.password[0]}</Text>
             )}
           </View>
           <View style={styles.inputContainer}>
@@ -183,7 +208,7 @@ export default function Register() {
             >
               <TextInput
                 style={styles.passwordField}
-                placeholder="Create a password"
+                placeholder="Confirm your password"
                 secureTextEntry={!showPassword}
                 value={formValues.confirmPassword}
                 onChangeText={(text) =>
@@ -202,7 +227,7 @@ export default function Register() {
               </TouchableOpacity>
             </View>
             {errors?.confirmPassword && (
-              <Text style={{ color: 'red' }}>{errors?.confirmPassword[0]}</Text>
+              <Text style={styles.errorText}>{errors?.confirmPassword[0]}</Text>
             )}
           </View>
 
@@ -295,11 +320,19 @@ export default function Register() {
             </View>
           </View> */}
 
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
           <TouchableOpacity
             onPress={handleRegister}
-            style={styles.submitButton}
+            style={[
+              styles.submitButton,
+              isSubmitting && styles.submitButtonDisabled,
+            ]}
+            disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Submit</Text>
+            <Text style={styles.submitButtonText}>
+              {isSubmitting ? 'Registering...' : 'Submit'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
@@ -509,5 +542,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'InterSemiBold',
     color: '#00BCD4',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
 });

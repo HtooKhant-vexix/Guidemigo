@@ -413,8 +413,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           refreshToken: response.data.data.refreshToken,
         };
 
-        await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
-        set({ isLoading: false });
+        await tokenManager.setTokens(tokens);
+        set({
+          user: response.data.data.user,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          isAuthenticated: true,
+          isLoading: false,
+        });
         return tokens;
       } else {
         throw new Error('Registration failed');
@@ -423,6 +429,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         error: error instanceof Error ? error.message : 'Failed to register',
         isLoading: false,
+        isAuthenticated: false,
+        user: null,
+        accessToken: null,
+        refreshToken: null,
       });
       return null;
     }

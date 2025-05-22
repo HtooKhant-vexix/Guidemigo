@@ -27,6 +27,7 @@ import {
 import { useTour } from '@/hooks/useData';
 import { useState } from 'react';
 import { SkeletonHostCard } from '@/components/SkeletonHostCard';
+import { Skeleton, SkeletonText } from '@/components/Skeleton';
 
 const TOURS = {
   '1': {
@@ -299,10 +300,58 @@ export default function TourDetail() {
             <SkeletonHostCard />
           </View>
         </View>
-        <View style={styles.content}>
+        {/* <View style={styles.content}>
           <SkeletonHostCard />
           <SkeletonHostCard />
           <SkeletonHostCard />
+        </View> */}
+        <View style={styles.con}>
+          <View style={styles.roleContainer_1}>
+            <View style={styles.skeletonRoleButton_1} />
+            {/* <View style={styles.skeletonRoleButton} /> */}
+          </View>
+          <View style={styles.searchContainer}>
+            <View style={styles.skeletonSearchBar}>
+              <View style={styles.skeletonSearchIcon} />
+              <View style={styles.stat_2}>
+                {/* <Skeleton width={24} height={24} variant="circular" /> */}
+                <Skeleton width={200} height={16} />
+                <Skeleton width={200} height={16} />
+              </View>
+            </View>
+          </View>
+          <View style={styles.roleContainer}>
+            <View style={styles.skeletonRoleButton} />
+            <View style={styles.skeletonRoleButton} />
+          </View>
+          <View style={styles.roleContainer}>
+            <View style={styles.skeletonRoleButton} />
+            <View style={styles.skeletonRoleButton} />
+          </View>
+          <View style={styles.content}>
+            <SkeletonText lines={1} spacing={8} />
+            <View style={styles.stats}>
+              <View style={styles.stat}>
+                <Skeleton width={24} height={24} variant="circular" />
+                <Skeleton width={60} height={16} />
+              </View>
+              <View style={styles.stat}>
+                <Skeleton width={24} height={24} variant="circular" />
+                <Skeleton width={60} height={16} />
+              </View>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <SkeletonText lines={1} spacing={8} />
+            <View style={styles.stats}>
+              <View style={styles.stat_1}>
+                {/* <Skeleton width={24} height={24} variant="circular" /> */}
+                <Skeleton width={180} height={16} />
+                <Skeleton width={180} height={16} />
+                <Skeleton width={180} height={16} />
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
     );
@@ -507,12 +556,58 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: 300,
   },
+  stats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stat_1: {
+    paddingTop: 10,
+    alignItems: 'center',
+    gap: 8,
+  },
+  stat_2: {
+    paddingStart: 20,
+    paddingTop: 10,
+    alignItems: 'center',
+    gap: 8,
+  },
   imageSlider: {
     height: '100%',
   },
   image: {
     width: 600,
     height: '100%',
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+  },
+  roleContainer_1: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    display: 'flex',
+    justifyContent: 'center',
+    paddingVertical: 26,
+    // backgroundColor: '#00BCD4',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    gap: 10,
+  },
+  roleButtonLight: {
+    backgroundColor: '#f5f5f5',
   },
   backButton: {
     position: 'absolute',
@@ -527,7 +622,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    marginTop: -20,
+    marginTop: 0,
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -638,6 +733,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },
+  con: {
+    marginTop: -60,
+  },
   priceContainer: {
     flex: 1,
   },
@@ -734,6 +832,41 @@ const styles = StyleSheet.create({
     color: '#ff0000',
     textAlign: 'center',
     marginTop: 16,
+  },
+  searchContainer: {
+    padding: 16,
+  },
+  skeletonSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    borderRadius: 12,
+  },
+  skeletonSearchIcon: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 100,
+  },
+  skeletonSearchInput: {
+    flex: 1,
+    marginLeft: 8,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+  },
+  skeletonRoleButton: {
+    flex: 1,
+    height: 80,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 12,
+  },
+  skeletonRoleButton_1: {
+    flex: 1,
+    height: 30,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 12,
   },
   backButtonText: {
     fontSize: 16,

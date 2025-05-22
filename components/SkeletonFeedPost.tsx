@@ -12,7 +12,7 @@ export function SkeletonFeedPost() {
       </View>
       <View style={styles.content}>
         <SkeletonText lines={3} spacing={6} />
-        <Skeleton height={300} style={styles.image} />
+        <Skeleton height={250} style={styles.image} />
       </View>
       <View style={styles.actions}>
         <View style={styles.actionButton}>
@@ -34,6 +34,7 @@ export function SkeletonFeedPost() {
 
 const styles = StyleSheet.create({
   container: {
+    marginHorizontal: 14,
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,

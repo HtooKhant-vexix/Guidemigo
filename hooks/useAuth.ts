@@ -66,7 +66,9 @@ export function useAuth() {
       const tokens = await register(data);
       if (tokens) {
         await AsyncStorage.setItem('tokens', JSON.stringify(tokens));
+        return tokens;
       }
+      return null;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
