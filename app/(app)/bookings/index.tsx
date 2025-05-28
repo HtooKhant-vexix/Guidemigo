@@ -177,6 +177,8 @@ export default function Bookings() {
     loadBookings();
   }, []);
 
+  console.log(bookings, 'this is bookings')
+
   const filteredBookings = bookings
     .filter((booking) => {
       if (activeFilter === 'all') return true;
@@ -205,7 +207,7 @@ export default function Bookings() {
       <Image
         source={{
           uri:
-            booking.location.image ||
+            booking?.location?.image ||
             'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
         }}
         style={[
@@ -266,7 +268,7 @@ export default function Bookings() {
                 booking.status === 'completed' && styles.completedText,
               ]}
             >
-              {booking.location.name}
+              {booking?.location?.name}
             </Text>
           </View>
 
@@ -281,7 +283,7 @@ export default function Bookings() {
                 booking.status === 'completed' && styles.completedText,
               ]}
             >
-              {booking._count.booking}/{booking.maxSeats} Participants
+              {booking._count?.booking}/{booking.maxSeats} Participants
             </Text>
           </View>
         </View>
@@ -291,7 +293,7 @@ export default function Bookings() {
             <Image
               source={{
                 uri:
-                  booking.host.profile?.image ||
+                  booking?.host?.profile?.image ||
                   'https://images.pexels.com/photos/5087165/pexels-photo-5087165.jpeg',
               }}
               style={styles.guideAvatar}
@@ -302,7 +304,7 @@ export default function Bookings() {
                 booking.status === 'completed' && styles.completedText,
               ]}
             >
-              {booking.host.profile?.name || booking.host.email}
+              {booking?.host?.profile?.name || booking?.host?.email}
             </Text>
           </View>
           <View style={styles.priceContainer}>

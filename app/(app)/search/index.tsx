@@ -125,6 +125,8 @@ export default function SearchPage() {
     }
   };
 
+  console.log(tours, 'this is tour');
+
   const renderResultItem = (item: any) => {
     switch (activeTab) {
       case 'places':
@@ -185,7 +187,7 @@ export default function SearchPage() {
             onPress={() => router.push(`/tours/${item.id}`)}
           >
             <Image
-              source={{ uri: item.image || DEFAULT_IMAGE }}
+              source={{ uri: item?.location?.image || DEFAULT_IMAGE }}
               style={styles.resultImage}
             />
             <View style={styles.resultInfo}>

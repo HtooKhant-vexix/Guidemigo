@@ -5,22 +5,42 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
 
 export default function Login() {
-  const [email, setEmail] = useState(
-    'digitalengineeringtech.frontend@gmail.com'
-  );
-  const [password, setPassword] = useState('Asdffdsa');
+  const [formValues, setFormValues] = useState({
+    email: '',
+    password: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof typeof formValues, string[]>>
+  >({});
   const { login, isLoading, error, clearError } = useAuth();
 
   const handleLogin = async () => {
     try {
-      await login({ email, password });
+      clearError();
+      const result = loginSchema.safeParse(formValues);
+
+      if (!result.success) {
+        const fieldErrors = result.error.flatten().fieldErrors;
+        setErrors(fieldErrors);
+        return;
+      }
+
+      await login(formValues);
       router.replace('/(app)/(tabs)');
     } catch (error) {
       // Error is handled by the auth store
@@ -28,7 +48,7 @@ export default function Login() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <ArrowLeft color="#000" size={24} />
       </TouchableOpacity>
@@ -50,24 +70,52 @@ export default function Login() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={errors.email ? styles.input_err : styles.input}
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
+              value={formValues.email}
+              onChangeText={(text) =>
+                setFormValues({ ...formValues, email: text })
+              }
             />
+            {errors?.email && (
+              <Text style={styles.errorText}>{errors.email[0]}</Text>
+            )}
           </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+            <View
+              style={
+                errors.password
+                  ? styles.passwordInput_err
+                  : styles.passwordInput
+              }
+            >
+              <TextInput
+                style={styles.passwordField}
+                placeholder="Enter your password"
+                secureTextEntry={!showPassword}
+                value={formValues.password}
+                onChangeText={(text) =>
+                  setFormValues({ ...formValues, password: text })
+                }
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color="#666" />
+                ) : (
+                  <Eye size={20} color="#666" />
+                )}
+              </TouchableOpacity>
+            </View>
+            {errors?.password && (
+              <Text style={styles.errorText}>{errors.password[0]}</Text>
+            )}
           </View>
 
           <TouchableOpacity
@@ -93,7 +141,7 @@ export default function Login() {
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -111,16 +159,16 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: 'InterBold',
-    color: '#000',
-    marginBottom: 8,
+    color: '#00BCD4',
+    marginBottom: 32,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter',
     color: '#666',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   errorContainer: {
     backgroundColor: '#FFE5E5',
@@ -132,9 +180,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    color: '#FF4444',
-    fontFamily: 'Inter',
-    flex: 1,
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
   },
   errorDismiss: {
     color: '#FF4444',
@@ -142,7 +190,7 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   form: {
-    gap: 24,
+    gap: 20,
   },
   inputContainer: {
     gap: 8,
@@ -159,6 +207,37 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     fontFamily: 'Inter',
+  },
+  input_err: {
+    borderWidth: 1,
+    borderColor: 'red',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    fontFamily: 'Inter',
+  },
+  passwordInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+  },
+  passwordInput_err: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'red',
+    borderRadius: 12,
+  },
+  passwordField: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    fontFamily: 'Inter',
+  },
+  eyeButton: {
+    padding: 16,
   },
   loginButton: {
     backgroundColor: '#00BCD4',
