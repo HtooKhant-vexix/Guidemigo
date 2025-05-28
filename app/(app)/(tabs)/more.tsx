@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -26,11 +27,52 @@ import {
   Bookmark,
   History,
 } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthStore } from '../../../service/auth';
 import { fetchUserProfile } from '../../../service/api';
 import { Ionicons } from '@expo/vector-icons';
+
+const ProfileSkeleton = () => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <View style={styles.profileSection}>
+      <Animated.View
+        style={[styles.profileImage, { backgroundColor: '#E0E0E0', opacity }]}
+      />
+      <Animated.View
+        style={[styles.skeletonText, { width: 150, height: 24, opacity }]}
+      />
+      <Animated.View
+        style={[styles.skeletonText, { width: 200, height: 20, opacity }]}
+      />
+      <Animated.View style={[styles.skeletonButton, { opacity }]} />
+    </View>
+  );
+};
 
 export default function More() {
   const [darkMode, setDarkMode] = useState(false);
@@ -173,32 +215,30 @@ export default function More() {
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
-      <View style={styles.profileSection}>
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#00BCD4" />
-        ) : (
-          <>
-            <Image
-              source={
-                profileData?.image
-                  ? { uri: profileData.image }
-                  : require('../../../assets/images/icon.png')
-              }
-              style={styles.profileImage}
-            />
-            <Text style={styles.profileName}>
-              {profileData?.name || user?.name}
-            </Text>
-            <Text style={styles.profileEmail}>{user?.email}</Text>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => router.push('../profile/edit')}
-            >
-              <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+      {isLoading ? (
+        <ProfileSkeleton />
+      ) : (
+        <View style={styles.profileSection}>
+          <Image
+            source={
+              profileData?.image
+                ? { uri: profileData.image }
+                : require('../../../assets/images/icon.png')
+            }
+            style={styles.profileImage}
+          />
+          <Text style={styles.profileName}>
+            {profileData?.name || user?.name}
+          </Text>
+          <Text style={styles.profileEmail}>{user?.email}</Text>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push('../profile/edit')}
+          >
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {menuSections.map((section, sectionIndex) => (
         <View key={sectionIndex} style={styles.section}>
@@ -342,5 +382,17 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 32,
     marginBottom: 16,
+  },
+  skeletonText: {
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  skeletonButton: {
+    width: 120,
+    height: 36,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 20,
+    marginTop: 8,
   },
 });

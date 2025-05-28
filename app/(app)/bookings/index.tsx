@@ -158,13 +158,17 @@ export default function Bookings() {
     async function loadBookings() {
       try {
         const response = (await fetchUserBookings()) as BookingResponse;
-        const userBookings = response.data.map((booking) => ({
-          ...booking.tour,
-          status: (new Date(booking.tour.startTime) > new Date()
-            ? 'upcoming'
-            : 'completed') as BookingStatus,
-        }));
-        setBookings(userBookings);
+        if (response?.data) {
+          const userBookings = response.data.map((booking) => ({
+            ...booking.tour,
+            status: (new Date(booking.tour.startTime) > new Date()
+              ? 'upcoming'
+              : 'completed') as BookingStatus,
+          }));
+          setBookings(userBookings);
+        } else {
+          setBookings([]);
+        }
         setError(null);
       } catch (err) {
         setError('Failed to load bookings');
@@ -177,8 +181,6 @@ export default function Bookings() {
     loadBookings();
   }, []);
 
-  console.log(bookings, 'this is bookings')
-
   const filteredBookings = bookings
     .filter((booking) => {
       if (activeFilter === 'all') return true;
@@ -188,8 +190,6 @@ export default function Bookings() {
       (a, b) =>
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
     );
-
-  console.log(bookings, 'this is bookings');
 
   const renderBookingCard = (booking: TourBooking, index: number) => (
     <TouchableOpacity
@@ -350,61 +350,6 @@ export default function Bookings() {
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Booking History</Text>
-        </View>
-        <View style={styles.filterContainer}>
-          {/* {['all', 'upcoming', 'completed'].map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[
-                styles.filterButton,
-                activeFilter === filter && styles.activeFilterButton,
-              ]}
-              onPress={() => setActiveFilter(filter as BookingStatus)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  activeFilter === filter && styles.activeFilterText,
-                ]}
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))} */}
-        </View>
-        <View style={styles.bookingsContainer}>
-          {[1, 2, 3].map((_, index) => (
-            <SkeletonBookingCard key={index} />
-          ))}
-        </View>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Booking History</Text>
-        </View>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load bookings</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => window.location.reload()}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -436,9 +381,38 @@ export default function Bookings() {
       </View>
 
       <View style={styles.bookingsContainer}>
-        {filteredBookings.length === 0 ? (
+        {loading ? (
+          [1, 2, 3].map((_, index) => <SkeletonBookingCard key={index} />)
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => window.location.reload()}
+            >
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : filteredBookings.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No bookings found</Text>
+            <Image
+              source={{
+                uri: 'https://cdn-icons-png.flaticon.com/512/7486/7486754.png',
+              }}
+              style={styles.emptyImage}
+            />
+            <Text style={styles.emptyTitle}>No Bookings Yet</Text>
+            <Text style={styles.emptyText}>
+              You haven't made any bookings yet. Start exploring amazing tours
+              and experiences!
+            </Text>
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => router.push('/(app)/(tabs)/guidemigo')}
+            >
+              <Calendar size={20} color="#fff" />
+              <Text style={styles.exploreButtonText}>Explore Tours</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           filteredBookings.map((booking, index) =>
@@ -681,10 +655,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    marginTop: 40,
+  },
+  emptyImage: {
+    width: 200,
+    height: 200,
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontFamily: 'InterBold',
+    color: '#000',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   emptyText: {
     fontSize: 16,
+    fontFamily: 'Inter',
     color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  exploreButton: {
+    backgroundColor: '#00BCD4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  exploreButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'InterSemiBold',
   },
   completedCard: {
     backgroundColor: '#EEEEEE',

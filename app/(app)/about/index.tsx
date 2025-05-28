@@ -159,7 +159,7 @@ export default function About() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            © 2024 Guidemigo. All rights reserved.
+            © 2025 Guidemigo. All rights reserved.
           </Text>
         </View>
       </ScrollView>
