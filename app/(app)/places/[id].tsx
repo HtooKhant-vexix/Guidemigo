@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -6,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
@@ -125,6 +127,72 @@ const PLACES = {
   },
 };
 
+const SkeletonLoader = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <ScrollView style={styles.container}>
+      <Animated.View style={[styles.header, { opacity }]}>
+        <View style={styles.skeletonImage} />
+      </Animated.View>
+
+      <View style={styles.content}>
+        <Animated.View style={[styles.skeletonTitle, { opacity }]} />
+
+        <View style={styles.locationContainer}>
+          <Animated.View style={[styles.skeletonLocation, { opacity }]} />
+        </View>
+
+        <View style={styles.statsContainer}>
+          <Animated.View style={[styles.skeletonStat, { opacity }]} />
+          <Animated.View style={[styles.skeletonStat, { opacity }]} />
+          <Animated.View style={[styles.skeletonStat, { opacity }]} />
+        </View>
+
+        <View style={styles.section}>
+          <Animated.View style={[styles.skeletonSectionTitle, { opacity }]} />
+          <Animated.View style={[styles.skeletonDescription, { opacity }]} />
+          <Animated.View style={[styles.skeletonDescription, { opacity }]} />
+        </View>
+
+        <View style={styles.section}>
+          <Animated.View style={[styles.skeletonSectionTitle, { opacity }]} />
+          {[1, 2, 3, 4].map((_, index) => (
+            <View key={index} style={styles.highlightItem}>
+              <Animated.View style={[styles.skeletonBullet, { opacity }]} />
+              <Animated.View style={[styles.skeletonHighlight, { opacity }]} />
+            </View>
+          ))}
+        </View>
+
+        <Animated.View style={[styles.skeletonButton, { opacity }]} />
+      </View>
+    </ScrollView>
+  );
+};
+
 export default function PlaceDetail() {
   const { id } = useLocalSearchParams();
   const place = PLACES[id as keyof typeof PLACES];
@@ -140,9 +208,13 @@ export default function PlaceDetail() {
     (tour) => place_data && tour.location?.name === place_data.name
   );
 
+  if (placesLoading) {
+    return <SkeletonLoader />;
+  }
+
   if (!place_data) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.centerContent]}>
         <Text>Place not found</Text>
       </View>
     );
@@ -511,5 +583,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'InterSemiBold',
     color: '#fff',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skeletonImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#E1E9EE',
+  },
+  skeletonTitle: {
+    height: 32,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    marginBottom: 8,
+    width: '70%',
+  },
+  skeletonLocation: {
+    height: 20,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    width: '50%',
+  },
+  skeletonStat: {
+    height: 20,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    width: 80,
+  },
+  skeletonSectionTitle: {
+    height: 24,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    width: '40%',
+    marginBottom: 12,
+  },
+  skeletonDescription: {
+    height: 16,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    width: '100%',
+    marginBottom: 8,
+  },
+  skeletonBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E1E9EE',
+  },
+  skeletonHighlight: {
+    height: 16,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    width: '80%',
+  },
+  skeletonButton: {
+    height: 56,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 12,
+    marginTop: 8,
   },
 });
