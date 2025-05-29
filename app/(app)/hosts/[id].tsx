@@ -18,7 +18,7 @@ import {
   MapPin,
 } from 'lucide-react-native';
 import { useHost, useHosts, useReview, useTours } from '@/hooks/useData';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 const HOSTS = {
   '1': {
@@ -143,17 +143,21 @@ export default function HostDetail() {
     loading: single_loading,
     error: single_err,
   } = useHost(Number(id));
-  const { tours } = useTours();
+  const { tours } = useTours('AVAILABLE');
   const [showToursModal, setShowToursModal] = useState(false);
 
-  const hostTours = tours
-    .filter(
-      (tour) => tour.host?.id === Number(id) && tour.status === 'AVAILABLE'
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+  const hostTours = useMemo(() => {
+    const currentDate = new Date();
+    return tours
+      .filter(
+        (tour) =>
+          tour.host?.id === Number(id) && new Date(tour.startTime) > currentDate
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      );
+  }, [tours, id]);
 
   if (!host) {
     return (
@@ -205,7 +209,13 @@ export default function HostDetail() {
                     <View style={styles.tourDetails}>
                       <Calendar size={16} color="#00BCD4" />
                       <Text style={styles.tourDate}>
-                        {tour.startTime?.slice(0, 10)}
+                        {new Date(tour.startTime).toLocaleDateString()}
+                      </Text>
+                      <Text style={styles.tourTime}>
+                        {new Date(tour.startTime).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </Text>
                     </View>
                     <View style={styles.tourDetails}>
@@ -214,14 +224,25 @@ export default function HostDetail() {
                         {tour.location?.name || 'No location'}
                       </Text>
                     </View>
-                    <Text style={styles.tourPrice}>${tour.price}</Text>
+                    <View style={styles.tourFooter}>
+                      <View style={styles.participantsContainer}>
+                        <Users size={16} color="#00BCD4" />
+                        <Text style={styles.participantsText}>
+                          {tour._count?.booking || 0}/{tour.maxSeats} joined
+                        </Text>
+                      </View>
+                      <Text style={styles.tourPrice}>${tour.price}</Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={styles.noDataText}>
-                No tours available at the moment
-              </Text>
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No available tours</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  Check back later for new tours
+                </Text>
+              </View>
             )}
           </ScrollView>
         </View>
@@ -498,22 +519,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   tourCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   tourImage: {
-    width: 120,
-    height: 120,
+    width: '100%',
+    height: 160,
   },
   tourInfo: {
-    flex: 1,
-    padding: 12,
+    padding: 16,
   },
   tourName: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'InterSemiBold',
     color: '#000',
     marginBottom: 8,
@@ -521,10 +542,15 @@ const styles = StyleSheet.create({
   tourDetails: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
+    gap: 8,
+    marginBottom: 8,
   },
   tourDate: {
+    fontSize: 14,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+  },
+  tourTime: {
     fontSize: 14,
     fontFamily: 'Inter',
     color: '#666',
@@ -534,11 +560,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     color: '#666',
   },
+  tourFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  participantsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  participantsText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+  },
   tourPrice: {
     fontSize: 18,
     fontFamily: 'InterBold',
     color: '#00BCD4',
-    marginTop: 8,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    marginTop: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
   },
   noDataText: {
     fontSize: 14,

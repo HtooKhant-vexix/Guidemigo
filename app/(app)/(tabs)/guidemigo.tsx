@@ -80,7 +80,11 @@ const RECOMMENDED_TOURS = [
 export default function Guidemigo() {
   const { hosts, loading: userLoading, error: userErr } = useHosts();
   const { tours, loading, error } = useTours('AVAILABLE');
-  console.log(tours, '......tours');
+  const currentDate = new Date();
+
+  const availableTours = tours?.filter(
+    (tour) => new Date(tour.startTime) > currentDate
+  );
 
   if (loading) {
     return (
@@ -203,7 +207,7 @@ export default function Guidemigo() {
             <Text style={styles.seeAllButton}>See All</Text>
           </TouchableOpacity>
         </View>
-        {tours?.slice(0, 2).map((tour) => (
+        {availableTours?.slice(0, 2).map((tour) => (
           <TouchableOpacity
             key={tour.id}
             style={styles.upcomingTourCard}
@@ -260,6 +264,14 @@ export default function Guidemigo() {
             </View>
           </TouchableOpacity>
         ))}
+        {(!availableTours || availableTours.length === 0) && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No upcoming tours</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Book a tour to see it here
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -274,7 +286,7 @@ export default function Guidemigo() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recommendedContainer}
         >
-          {tours.slice(0, 3).map((tour) => (
+          {availableTours?.slice(0, 3).map((tour) => (
             <TouchableOpacity
               key={tour.id}
               style={styles.recommendedCard}
@@ -312,6 +324,14 @@ export default function Guidemigo() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        {(!availableTours || availableTours.length === 0) && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No recommended tours</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Check back later for new tours
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -520,5 +540,22 @@ const styles = StyleSheet.create({
     height: 16,
     backgroundColor: '#e0e0e0',
     borderRadius: 8,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    marginTop: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
   },
 });

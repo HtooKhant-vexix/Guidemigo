@@ -109,7 +109,8 @@ export default function Home() {
 
   useEffect(() => {
     // Initialize with first 5 items
-    const initialTours = tours.slice(0, ITEMS_PER_PAGE);
+    const initialTours = tours;
+    // const initialTours = tours.slice(0, ITEMS_PER_PAGE);
     setDisplayedTours(initialTours);
     setHasMore(tours.length > ITEMS_PER_PAGE);
   }, [tours]);
@@ -231,6 +232,15 @@ export default function Home() {
     setIsLoadingMore(false);
   };
 
+  console.log(
+    new Date(displayedTours[displayedTours?.length - 1]?.startTime),
+    'this is display tour',
+    new Date(),
+    new Date(displayedTours[0]?.startTime) > new Date(),
+    displayedTours[displayedTours?.length - 2],
+    '..........'
+  );
+
   const renderTravelerContent = () => (
     <>
       <View style={styles.section}>
@@ -336,7 +346,12 @@ export default function Home() {
   );
 
   const renderHostContent = () => {
-    const filteredTours = displayedTours.filter(
+    const currentDate = new Date();
+    const availableTours = displayedTours.filter(
+      (tour) => new Date(tour.startTime) > currentDate
+    );
+
+    const filteredTours = availableTours.filter(
       (tour) =>
         tour.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tour.location?.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -345,7 +360,7 @@ export default function Home() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Tours</Text>
+          <Text style={styles.sectionTitle}>Available Tours</Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push('/tours/create-tour')}
@@ -375,12 +390,12 @@ export default function Home() {
         ) : filteredTours.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              {searchQuery ? 'No tours found' : 'No tours created yet'}
+              {searchQuery ? 'No tours found' : 'No available tours'}
             </Text>
             <Text style={styles.emptyStateSubtext}>
               {searchQuery
                 ? 'Try a different search term'
-                : 'Create your first tour to get started'}
+                : 'Create a new tour to get started'}
             </Text>
           </View>
         ) : (

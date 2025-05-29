@@ -28,16 +28,22 @@ export default function AllTours() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { tours, loading, error } = useTours('AVAILABLE');
-  console.log(tours, '.....................sdfsf');
+  const currentDate = new Date();
+
+  const availableTours = useMemo(() => {
+    return (
+      tours?.filter((tour) => new Date(tour.startTime) > currentDate) || []
+    );
+  }, [tours]);
 
   const filteredTours = useMemo(() => {
-    if (!searchQuery) return tours;
-    return tours.filter(
+    if (!searchQuery) return availableTours;
+    return availableTours.filter(
       (tour) =>
         tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tour.location?.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [tours, searchQuery]);
+  }, [availableTours, searchQuery]);
 
   const paginatedTours = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -90,49 +96,62 @@ export default function AllTours() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.toursList}>
-          {filteredTours.map((tour) => (
-            <TouchableOpacity
-              key={tour.id}
-              style={styles.tourCard}
-              onPress={() => router.push(`/tours/${tour.id}`)}
-            >
-              <Image
-                source={{ uri: tour.location.image }}
-                style={styles.tourImage}
-              />
-              <View style={styles.tourContent}>
-                <Text style={styles.tourTitle}>{tour.title}</Text>
-                <View style={styles.tourInfo}>
-                  <View style={styles.infoItem}>
-                    <MapPin size={16} color="#00BCD4" />
-                    <Text style={styles.infoText}>{tour.location.name}</Text>
+          {filteredTours.length > 0 ? (
+            filteredTours.map((tour) => (
+              <TouchableOpacity
+                key={tour.id}
+                style={styles.tourCard}
+                onPress={() => router.push(`/tours/${tour.id}`)}
+              >
+                <Image
+                  source={{ uri: tour.location.image }}
+                  style={styles.tourImage}
+                />
+                <View style={styles.tourContent}>
+                  <Text style={styles.tourTitle}>{tour.title}</Text>
+                  <View style={styles.tourInfo}>
+                    <View style={styles.infoItem}>
+                      <MapPin size={16} color="#00BCD4" />
+                      <Text style={styles.infoText}>{tour.location.name}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                      <Calendar size={16} color="#00BCD4" />
+                      <Text style={styles.infoText}>
+                        {new Date(tour.startTime).toLocaleDateString()}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.infoItem}>
-                    <Calendar size={16} color="#00BCD4" />
-                    <Text style={styles.infoText}>
-                      {new Date(tour.startTime).toLocaleDateString()}
-                    </Text>
+                  <View style={styles.tourFooter}>
+                    <View style={styles.guideInfo}>
+                      <Image
+                        source={{
+                          uri:
+                            tour.host.profile?.image ||
+                            'https://images.unsplash.com/photo-1565967511849-76a60a516170',
+                        }}
+                        style={styles.guideImage}
+                      />
+                      <Text style={styles.guideName}>
+                        {tour.host.profile?.name || tour.host.email}
+                      </Text>
+                    </View>
+                    <Text style={styles.price}>${tour.price}</Text>
                   </View>
                 </View>
-                <View style={styles.tourFooter}>
-                  <View style={styles.guideInfo}>
-                    <Image
-                      source={{
-                        uri:
-                          tour.host.profile?.image ||
-                          'https://images.unsplash.com/photo-1565967511849-76a60a516170',
-                      }}
-                      style={styles.guideImage}
-                    />
-                    <Text style={styles.guideName}>
-                      {tour.host.profile?.name || tour.host.email}
-                    </Text>
-                  </View>
-                  <Text style={styles.price}>${tour.price}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {searchQuery ? 'No tours found' : 'No available tours'}
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Check back later for new tours'}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -251,5 +270,21 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    marginTop: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter',
   },
 });
