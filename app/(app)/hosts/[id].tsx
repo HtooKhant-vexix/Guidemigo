@@ -159,7 +159,7 @@ export default function HostDetail() {
       );
   }, [tours, id]);
 
-  if (!host) {
+  if (!single_host) {
     return (
       <View style={styles.container}>
         <Text>Host not found</Text>

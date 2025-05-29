@@ -280,6 +280,9 @@ export const fetchHosts = async () => {
 };
 
 export const fetchHost = async (id: string) => {
+  console.log('..................................');
+  console.log(id);
+  console.log('..................................');
   const { data } = await api.get(`/user/profile/${id}`);
   return data;
 };

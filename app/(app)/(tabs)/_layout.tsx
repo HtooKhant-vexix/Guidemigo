@@ -100,17 +100,18 @@ export default function TabLayout() {
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: '#eee',
-          paddingVertical: 20,
-          height: 90,
+          paddingVertical: 12,
+          height: 75,
           marginTop: 1,
         },
         tabBarLabelStyle: {
-          fontSize: 14,
-          marginTop: 7,
-          fontWeight: 200,
+          fontSize: 13,
+          marginTop: 6,
+          fontWeight: '500',
+          fontFamily: 'Inter',
         },
         tabBarIconStyle: {
-          marginTop: 13,
+          marginTop: 8,
         },
       }}
     >
@@ -122,7 +123,7 @@ export default function TabLayout() {
               options={{
                 title,
                 tabBarIcon: ({ size, color }) => (
-                  <Icon size={size + 10} color={color} />
+                  <Icon size={size + 8} color={color} />
                 ),
               }}
             />
@@ -134,7 +135,7 @@ export default function TabLayout() {
               options={{
                 title,
                 tabBarIcon: ({ size, color }) => (
-                  <Icon size={size + 10} color={color} />
+                  <Icon size={size + 8} color={color} />
                 ),
               }}
             />

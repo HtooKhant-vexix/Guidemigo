@@ -223,7 +223,7 @@ export default function More() {
             source={
               profileData?.image
                 ? { uri: profileData.image }
-                : require('../../../assets/images/icon.png')
+                : require('../../../assets/images/default.jpg')
             }
             style={styles.profileImage}
           />

@@ -286,7 +286,7 @@ export default function EditProfile() {
           source={
             profile.image
               ? { uri: profile.image }
-              : require('../../../assets/images/icon.png')
+              : require('../../../assets/images/default.jpg')
           }
           style={styles.profileImage}
         />
