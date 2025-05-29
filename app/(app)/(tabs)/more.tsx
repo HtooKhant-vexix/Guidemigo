@@ -267,7 +267,7 @@ export default function More() {
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
 
-      <Text style={styles.version}>Version 1.0.0</Text>
+      <Text style={styles.version}>Version 1.0.5</Text>
     </ScrollView>
   );
 }

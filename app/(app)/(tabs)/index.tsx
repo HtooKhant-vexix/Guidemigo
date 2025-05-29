@@ -108,88 +108,10 @@ export default function Home() {
   const [displayedTours, setDisplayedTours] = useState<any[]>([]);
 
   useEffect(() => {
-    // Initialize with first 5 items
     const initialTours = tours;
-    // const initialTours = tours.slice(0, ITEMS_PER_PAGE);
     setDisplayedTours(initialTours);
     setHasMore(tours.length > ITEMS_PER_PAGE);
   }, [tours]);
-
-  if (placesLoading || hostsLoading) {
-    // if (true) {
-    return (
-      <ScrollView style={styles.container}>
-        <View style={styles.bg_ske}>
-          {/* Skeleton Header */}
-          <View style={styles.header}>
-            <View style={styles.locationContainer}>
-              <View style={styles.skeletonLocationIcon} />
-              <View>
-                <View style={styles.skeletonLocationLabel} />
-                <View style={styles.skeletonLocationText} />
-              </View>
-            </View>
-            <View style={styles.skeletonNotificationButton} />
-          </View>
-          {/* Skeleton Search */}
-          <View style={styles.searchContainer_ske}>
-            {/* <View style={styles.skeletonSearchIcon} />
-            <View style={styles.skeletonSearchInput} /> */}
-          </View>
-          {/* Skeleton Title */}
-          <View style={styles.title}>
-            <View style={styles.skeletonTitle} />
-            <View
-              style={[styles.skeletonTitle, { width: '60%', marginTop: 5 }]}
-            />
-          </View>
-        </View>
-
-        {/* Skeleton Role Selector */}
-        <View style={styles.roleContainer}>
-          <View style={styles.skeletonRoleButton} />
-          <View style={styles.skeletonRoleButton} />
-        </View>
-
-        {/* Skeleton Ads Section */}
-        <View style={styles.section}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {Array.from({ length: 2 }).map((_, index) => (
-              <View key={index} style={styles.ads}>
-                <SkeletonCard height={170} />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Skeleton Best Hosts Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.skeletonSectionTitle} />
-            <View style={styles.skeletonViewAllButton} />
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {Array.from({ length: 2 }).map((_, index) => (
-              <SkeletonHostCard key={index} />
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Skeleton Best Places Section */}
-        {/* <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.skeletonSectionTitle} />
-            <View style={styles.skeletonViewAllButton} />
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <SkeletonPlaceCard key={index} />
-            ))}
-          </ScrollView>
-        </View> */}
-      </ScrollView>
-    );
-  }
 
   if (placesError || hostsError) {
     return (
@@ -198,7 +120,7 @@ export default function Home() {
       </View>
     );
   }
-  console.log(hosts[0]);
+
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
@@ -276,41 +198,55 @@ export default function Home() {
           showsHorizontalScrollIndicator={false}
           style={styles.hostsList}
         >
-          {hosts.map((host) => (
-            <TouchableOpacity
-              key={host.id}
-              style={styles.hostCard}
-              onPress={() => router.push(`/hosts/${host.id}`)}
-            >
-              <Image
-                source={
-                  host?.profile?.image
-                    ? { uri: host.profile.image }
-                    : require('../../../assets/images/default.jpg')
-                }
-                style={styles.hostImage}
-              />
-              <View style={styles.hostInfo}>
-                <View style={styles.name}>
-                  <Text style={styles.hostName}>{host?.profile?.name}</Text>
-                  <Bookmark size={23} color="#000" />
+          {hostsLoading ? (
+            Array.from({ length: 2 }).map((_, index) => (
+              <SkeletonHostCard key={index} />
+            ))
+          ) : hosts && hosts.length > 0 ? (
+            hosts.map((host) => (
+              <TouchableOpacity
+                key={host.id}
+                style={styles.hostCard}
+                onPress={() => router.push(`/hosts/${host.id}`)}
+              >
+                <Image
+                  source={
+                    host?.profile?.image
+                      ? { uri: host.profile.image }
+                      : require('../../../assets/images/default.jpg')
+                  }
+                  style={styles.hostImage}
+                />
+                <View style={styles.hostInfo}>
+                  <View style={styles.name}>
+                    <Text style={styles.hostName}>{host?.profile?.name}</Text>
+                    <Bookmark size={23} color="#000" />
+                  </View>
+                  <View style={styles.hostRating}>
+                    <CircleUserRound size={19} color="#00BCD4" />
+                    <Text style={styles.hostDetails}>
+                      Hosted {host?.profile?.travellers || 0} Travelers
+                    </Text>
+                  </View>
+                  <View style={styles.hostRating}>
+                    <Languages size={19} color="#00BCD4" />
+                    <Text style={styles.hostLanguages}>
+                      {host?.profile?.languages?.join(', ') ||
+                        'No languages specified'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.hostRating}>
-                  <CircleUserRound size={19} color="#00BCD4" />
-                  <Text style={styles.hostDetails}>
-                    Hosted {host?.profile?.travellers || 0} Travelers
-                  </Text>
-                </View>
-                <View style={styles.hostRating}>
-                  <Languages size={19} color="#00BCD4" />
-                  <Text style={styles.hostLanguages}>
-                    {host?.profile?.languages?.join(', ') ||
-                      'No languages specified'}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={[styles.hostCard, styles.emptyState]}>
+              <CircleUserRound size={40} color="#00BCD4" />
+              <Text style={styles.emptyStateText}>No Hosts Found</Text>
+              <Text style={styles.emptyStateSubtext}>
+                There are no hosts available at the moment
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
 
@@ -326,20 +262,37 @@ export default function Home() {
           showsHorizontalScrollIndicator={false}
           style={styles.placesList}
         >
-          {places.map((place) => (
-            <TouchableOpacity
-              key={place.id}
-              style={styles.placeCard}
-              onPress={() => router.push(`/places/${place.id}`)}
-            >
-              <Image source={{ uri: place.image }} style={styles.placeImage} />
-              <Text style={styles.placeName}>{place?.name}</Text>
-              <View style={styles.placeLocation}>
-                <MapPin size={16} color="#00BCD4" />
-                <Text style={styles.placeLocationText}>{place?.address}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {placesLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonPlaceCard key={index} />
+            ))
+          ) : places && places.length > 0 ? (
+            places.map((place) => (
+              <TouchableOpacity
+                key={place.id}
+                style={styles.placeCard}
+                onPress={() => router.push(`/places/${place.id}`)}
+              >
+                <Image
+                  source={{ uri: place.image }}
+                  style={styles.placeImage}
+                />
+                <Text style={styles.placeName}>{place?.name}</Text>
+                <View style={styles.placeLocation}>
+                  <MapPin size={16} color="#00BCD4" />
+                  <Text style={styles.placeLocationText}>{place?.address}</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={[styles.placeCard, styles.emptyState]}>
+              <MapPin size={40} color="#00BCD4" />
+              <Text style={styles.emptyStateText}>No Places Found</Text>
+              <Text style={styles.emptyStateSubtext}>
+                There are no places available at the moment
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
     </>
@@ -1133,5 +1086,30 @@ const styles = StyleSheet.create({
     height: 14,
     backgroundColor: '#e0e0e0',
     borderRadius: 4,
+  },
+  emptyStateContainer: {
+    width: 300,
+    height: 200,
+    marginLeft: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontFamily: 'InterSemiBold',
+    color: '#000',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#666',
+    textAlign: 'center',
   },
 });

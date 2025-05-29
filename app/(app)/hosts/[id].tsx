@@ -161,9 +161,68 @@ export default function HostDetail() {
 
   if (!single_host) {
     return (
-      <View style={styles.container}>
-        <Text>Host not found</Text>
-      </View>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <View style={[styles.image, { backgroundColor: '#E1E9EE' }]} />
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft color="#fff" size={24} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          <View style={[styles.skeletonText, { width: '60%', height: 24 }]} />
+
+          <View style={styles.statsContainer}>
+            {[1, 2, 3, 4].map((_, index) => (
+              <View key={index} style={styles.stat}>
+                <View
+                  style={[styles.skeletonText, { width: 80, height: 16 }]}
+                />
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.section}>
+            <View style={[styles.skeletonText, { width: '30%', height: 20 }]} />
+            <View
+              style={[
+                styles.skeletonText,
+                { width: '100%', height: 16, marginTop: 8 },
+              ]}
+            />
+            <View
+              style={[
+                styles.skeletonText,
+                { width: '90%', height: 16, marginTop: 4 },
+              ]}
+            />
+            <View
+              style={[
+                styles.skeletonText,
+                { width: '80%', height: 16, marginTop: 4 },
+              ]}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <View style={[styles.skeletonText, { width: '30%', height: 20 }]} />
+            <View style={styles.expertiseContainer}>
+              {[1, 2, 3].map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.skeletonText,
+                    { width: 100, height: 32, marginRight: 8, marginTop: 8 },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -406,6 +465,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 16,
     marginBottom: 24,
+    marginTop: 10,
   },
   stat: {
     flexDirection: 'row',
@@ -605,5 +665,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     padding: 16,
+  },
+  skeletonText: {
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
   },
 });
