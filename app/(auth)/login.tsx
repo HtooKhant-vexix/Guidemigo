@@ -6,12 +6,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Image,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { ArrowLeft, Eye, EyeOff, Calendar } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthStore } from '../../service/auth';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -28,9 +27,9 @@ export default function Login() {
   const [errors, setErrors] = useState<
     Partial<Record<keyof typeof formValues, string[]>>
   >({});
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError } = useAuthStore();
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     try {
       clearError();
       const result = loginSchema.safeParse(formValues);
@@ -41,8 +40,9 @@ export default function Login() {
         return;
       }
 
-      await login(formValues);
-      router.replace('/(app)/(tabs)');
+      login(formValues);
+      // Navigate directly to home page without any checks
+      router.push('/(app)/(tabs)');
     } catch (error) {
       // Error is handled by the auth store
     }
@@ -269,46 +269,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'InterSemiBold',
     color: '#00BCD4',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    marginTop: 40,
-  },
-  emptyImage: {
-    width: 200,
-    height: 200,
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontFamily: 'InterBold',
-    color: '#000',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    fontFamily: 'Inter',
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 24,
-  },
-  exploreButton: {
-    backgroundColor: '#00BCD4',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  exploreButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'InterSemiBold',
   },
 });

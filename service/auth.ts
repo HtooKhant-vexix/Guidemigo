@@ -13,11 +13,9 @@ interface AuthTokens {
 }
 
 interface User {
-  id: number;
+  id: string;
   email: string;
-  name?: string;
-  avatar?: string;
-  role?: string | null;
+  name: string;
 }
 
 interface AuthResponse {
@@ -37,14 +35,14 @@ interface AuthState {
   error: string | null;
   isAuthenticated: boolean;
   initializeAuth: (tokens: AuthTokens) => Promise<void>;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
+  login: (credentials: { email: string; password: string }) => void;
   register: (data: {
     email: string;
     password: string;
     name: string;
     type: string;
   }) => Promise<AuthTokens | null>;
-  logout: () => Promise<void>;
+  logout: () => void;
   clearError: () => void;
   setup: (data: any, token: AuthTokens) => Promise<any>;
   setTokens: (tokens: AuthTokens) => void;
@@ -293,6 +291,10 @@ api.interceptors.response.use(
   }
 );
 
+// Default credentials
+const DEFAULT_EMAIL = 'test@example.com';
+const DEFAULT_PASSWORD = 'password123';
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
@@ -440,48 +442,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  login: async (credentials) => {
-    try {
-      set({ isLoading: true, error: null });
-      const response = await api.post<AuthResponse>('/auth/login', credentials);
+  login: (credentials) => {
+    set({ isLoading: true, error: null });
 
-      if (
-        !response.data.success ||
-        !response.data.data.accessToken ||
-        !response.data.data.refreshToken
-      ) {
-        throw new Error('Invalid login response: missing tokens');
-      }
-
-      const tokens = {
-        accessToken: response.data.data.accessToken,
-        refreshToken: response.data.data.refreshToken,
-      };
-
-      // Store tokens first
-      await tokenManager.setTokens(tokens);
-
-      // Then update state
+    // Check against default credentials
+    if (
+      credentials.email === DEFAULT_EMAIL &&
+      credentials.password === DEFAULT_PASSWORD
+    ) {
       set({
-        user: response.data.data.user,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        user: {
+          id: '1',
+          email: DEFAULT_EMAIL,
+          name: 'Test User',
+        },
         isAuthenticated: true,
         isLoading: false,
-        error: null,
       });
-    } catch (error) {
-      // Clear tokens on error
-      await tokenManager.clearTokens();
+    } else {
       set({
-        error: error instanceof Error ? error.message : 'Failed to login',
+        error: 'Invalid credentials',
         isLoading: false,
-        isAuthenticated: false,
-        user: null,
-        accessToken: null,
-        refreshToken: null,
       });
-      throw error;
     }
   },
 
@@ -606,27 +588,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: async () => {
-    try {
-      // Clear tokens first
-      await tokenManager.clearTokens();
-
-      // Then update state
-      set({
-        user: null,
-        accessToken: null,
-        refreshToken: null,
-        isAuthenticated: false,
-        error: null,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-      set({
-        error: 'Failed to logout',
-        isLoading: false,
-      });
-    }
+  logout: () => {
+    set({
+      user: null,
+      isAuthenticated: false,
+    });
   },
 
   clearError: () => set({ error: null }),
