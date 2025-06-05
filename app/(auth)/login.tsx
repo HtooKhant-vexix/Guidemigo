@@ -33,15 +33,16 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       clearError();
-      const result = loginSchema.safeParse(formValues);
+      // const result = loginSchema.safeParse(formValues);
 
-      if (!result.success) {
-        const fieldErrors = result.error.flatten().fieldErrors;
-        setErrors(fieldErrors);
-        return;
-      }
+      // if (!result.success) {
+      //   const fieldErrors = result.error.flatten().fieldErrors;
+      //   setErrors(fieldErrors);
+      //   return;
+      // }
+      // await login(formValues);
 
-      await login(formValues);
+      await login();
       router.replace('/(app)/(tabs)');
     } catch (error) {
       // Error is handled by the auth store
