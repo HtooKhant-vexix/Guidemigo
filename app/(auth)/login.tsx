@@ -13,6 +13,7 @@ import { ArrowLeft, Eye, EyeOff, Calendar } from 'lucide-react-native';
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { z } from 'zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -33,17 +34,17 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       clearError();
-      // const result = loginSchema.safeParse(formValues);
+      const result = loginSchema.safeParse(formValues);
 
-      // if (!result.success) {
-      //   const fieldErrors = result.error.flatten().fieldErrors;
-      //   setErrors(fieldErrors);
-      //   return;
-      // }
-      // await login(formValues);
+      if (!result.success) {
+        const fieldErrors = result.error.flatten().fieldErrors;
+        setErrors(fieldErrors);
+        return;
+      }
+      await login(formValues);
 
-      await login();
-      router.replace('/(app)/(tabs)');
+      // await login();
+      // router.replace('/(app)/(tabs)');
     } catch (error) {
       // Error is handled by the auth store
     }
@@ -85,6 +86,16 @@ export default function Login() {
               <Text style={styles.errorText}>{errors.email[0]}</Text>
             )}
           </View>
+
+          {/* <DateTimePicker
+            value={new Date()}
+            // value={profile.dob ? new Date(profile.dob) : new Date()}
+            mode="date"
+            design="material"
+            display="default"
+            // onChange={handleDateChange}
+            maximumDate={new Date()}
+          /> */}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>

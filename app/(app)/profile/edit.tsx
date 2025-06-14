@@ -24,7 +24,6 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../service/auth';
 import * as ImagePicker from 'expo-image-picker';
 import { fetchUserProfile } from '../../../service/api';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const EXPERTISE_OPTIONS = [
   'Local Culture',
@@ -83,6 +82,9 @@ export default function EditProfile() {
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [showLanguagesModal, setShowLanguagesModal] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [showMonthModal, setShowMonthModal] = useState(false);
+  const [showYearModal, setShowYearModal] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -140,22 +142,61 @@ export default function EditProfile() {
     loadProfile();
   }, [user?.id, accessToken]);
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      const formattedDate = selectedDate.toISOString();
-      setProfile({ ...profile, dob: formattedDate });
+  const generateDays = () => {
+    const days = [];
+    for (let i = 1; i <= 31; i++) {
+      days.push(i.toString().padStart(2, '0'));
     }
+    return days;
   };
 
-  const formatDisplayDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const MONTHS = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  const generateYears = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 100; i <= currentYear; i++) {
+      years.push(i.toString());
+    }
+    return years.reverse();
+  };
+
+  const handleDateChange = (type: 'day' | 'month' | 'year', value: string) => {
+    const currentDate = profile.dob ? new Date(profile.dob) : new Date();
+    let newDate = new Date(currentDate);
+
+    if (type === 'day') {
+      newDate.setDate(parseInt(value));
+    } else if (type === 'month') {
+      newDate.setMonth(MONTHS.indexOf(value));
+    } else if (type === 'year') {
+      newDate.setFullYear(parseInt(value));
+    }
+
+    setProfile({ ...profile, dob: newDate.toISOString() });
+  };
+
+  const getCurrentDateParts = () => {
+    if (!profile.dob) return { day: '', month: '', year: '' };
+    const date = new Date(profile.dob);
+    return {
+      day: date.getDate().toString().padStart(2, '0'),
+      month: MONTHS[date.getMonth()],
+      year: date.getFullYear().toString(),
+    };
   };
 
   console.log(profile.expertise, '........');
@@ -388,30 +429,139 @@ export default function EditProfile() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Date of Birth</Text>
-          <TouchableOpacity
-            style={styles.input}
-            onPress={() => setShowDatePicker(true)}
-            disabled={isLoading}
-          >
-            <View style={styles.dateInput}>
+          <View style={styles.datePickerContainer}>
+            <TouchableOpacity
+              style={[styles.datePickerInput, { flex: 1 }]}
+              onPress={() => setShowDayModal(true)}
+              disabled={isLoading}
+            >
               <Text
                 style={[styles.dateText, profile.dob && styles.selectedText]}
               >
-                {profile.dob
-                  ? formatDisplayDate(profile.dob)
-                  : 'Select date of birth'}
+                {getCurrentDateParts().day || 'DD'}
               </Text>
-              <Calendar size={20} color="#666" />
-            </View>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={profile.dob ? new Date(profile.dob) : new Date()}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-            />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.datePickerInput, { flex: 2 }]}
+              onPress={() => setShowMonthModal(true)}
+              disabled={isLoading}
+            >
+              <Text
+                style={[styles.dateText, profile.dob && styles.selectedText]}
+              >
+                {getCurrentDateParts().month || 'Month'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.datePickerInput, { flex: 1 }]}
+              onPress={() => setShowYearModal(true)}
+              disabled={isLoading}
+            >
+              <Text
+                style={[styles.dateText, profile.dob && styles.selectedText]}
+              >
+                {getCurrentDateParts().year || 'YYYY'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {showDayModal && (
+            <ScrollView
+              style={styles.dateDropdown}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+            >
+              {generateDays().map((day) => (
+                <TouchableOpacity
+                  key={day}
+                  style={[
+                    styles.dateOption,
+                    getCurrentDateParts().day === day &&
+                      styles.selectedDateOption,
+                  ]}
+                  onPress={() => {
+                    handleDateChange('day', day);
+                    setShowDayModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dateOptionText,
+                      getCurrentDateParts().day === day &&
+                        styles.selectedDateOptionText,
+                    ]}
+                  >
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {showMonthModal && (
+            <ScrollView
+              style={styles.dateDropdown}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+            >
+              {MONTHS.map((month) => (
+                <TouchableOpacity
+                  key={month}
+                  style={[
+                    styles.dateOption,
+                    getCurrentDateParts().month === month &&
+                      styles.selectedDateOption,
+                  ]}
+                  onPress={() => {
+                    handleDateChange('month', month);
+                    setShowMonthModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dateOptionText,
+                      getCurrentDateParts().month === month &&
+                        styles.selectedDateOptionText,
+                    ]}
+                  >
+                    {month}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {showYearModal && (
+            <ScrollView
+              style={styles.dateDropdown}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+            >
+              {generateYears().map((year) => (
+                <TouchableOpacity
+                  key={year}
+                  style={[
+                    styles.dateOption,
+                    getCurrentDateParts().year === year &&
+                      styles.selectedDateOption,
+                  ]}
+                  onPress={() => {
+                    handleDateChange('year', year);
+                    setShowYearModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dateOptionText,
+                      getCurrentDateParts().year === year &&
+                        styles.selectedDateOptionText,
+                    ]}
+                  >
+                    {year}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           )}
         </View>
 
@@ -775,10 +925,47 @@ const styles = StyleSheet.create({
     color: '#00BCD4',
     fontFamily: 'InterSemiBold',
   },
-  dateInput: {
+  datePickerContainer: {
     flexDirection: 'row',
+    gap: 8,
+  },
+  datePickerInput: {
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 8,
+    padding: 12,
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  dateDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    maxHeight: 200,
+    zIndex: 1000,
+    marginTop: 4,
+  },
+  dateOption: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  selectedDateOption: {
+    backgroundColor: '#f0f9fa',
+  },
+  dateOptionText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    color: '#666',
+    textAlign: 'center',
+  },
+  selectedDateOptionText: {
+    color: '#00BCD4',
+    fontFamily: 'InterSemiBold',
   },
   dateText: {
     fontSize: 16,

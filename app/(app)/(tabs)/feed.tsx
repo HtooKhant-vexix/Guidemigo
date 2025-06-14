@@ -196,7 +196,7 @@ const PostActions = memo(({ post, onLike }: PostActionsProps) => (
     <View style={styles.leftActions}>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => onLike(post.id)}
+        // onPress={() => onLike(post.id)}
       >
         <Heart
           size={24}
